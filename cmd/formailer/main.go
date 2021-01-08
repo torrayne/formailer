@@ -137,9 +137,11 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 	// 	}, nil
 	// }
 
+	fmt.Println(ctx.Value("netlify"))
+
 	return &events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
-		Body:       fmt.Sprintf("Hello, World!\n%+v\n%+v", data, ctx.Value("netlify")),
+		Body:       fmt.Sprintf("Hello, World!\n%+v\n", data),
 	}, nil
 }
 
