@@ -1,4 +1,4 @@
 build:
 	mkdir -p functions
-	go get 
+	go mod tidy
 	go build -o functions/formailer
