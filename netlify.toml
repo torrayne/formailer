@@ -1,0 +1,4 @@
+[build.environment]
+    FORM_CONTACT_TO="djatwood01@gmail.com"
+    FORM_CONTACT_FROM="daniel@atwood.io"
+    FORM_CONTACT_SUBJECT="New contact form submission"
