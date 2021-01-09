@@ -5,6 +5,8 @@
 
 [build.environment]
     GO_IMPORT_PATH = "github.com/djatwood/netlify-form-emailer"
+
+[context.production.environment]
     FORM_CONTACT_TO="djatwood01@gmail.com"
     FORM_CONTACT_FROM="daniel@atwood.io"
     FORM_CONTACT_SUBJECT="New contact form submission"
