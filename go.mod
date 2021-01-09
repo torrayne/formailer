@@ -1,4 +1,4 @@
-module github.com/djatwood/netlify-form-emailer
+module github.com/djatwood/formailer
 
 go 1.15
 
