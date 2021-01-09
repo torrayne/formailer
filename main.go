@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -89,60 +91,67 @@ func main() {
 	lambda.Start(handler)
 }
 
-func returnError(code int) *events.APIGatewayProxyResponse {
-	return &events.APIGatewayProxyResponse{
+func respond(code int, err error) *events.APIGatewayProxyResponse {
+	response := &events.APIGatewayProxyResponse{
 		StatusCode: code,
 		Body:       http.StatusText(code),
 	}
+
+	if err == nil {
+		return response
+	}
+
+	str, err := json.Marshal(newError(err))
+	if err != nil {
+		code = http.StatusInternalServerError
+		response.Body = http.StatusText(http.StatusInternalServerError)
+	} else {
+		response.Body = string(str)
+	}
+
+	return response
+}
+
+func newError(err error) map[string]string {
+	return map[string]string{"message": err.Error()}
 }
 
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
-	// port, err := strconv.Atoi(os.Getenv("SMTP_PORT"))
-	// if err != nil {
-	// 	panic("Could not parse SMTP_PORT as int")
-	// }
-
-	fmt.Println(os.Environ())
-
-	// server = mail.NewSMTPClient()
-	// server.Host = os.Getenv("SMTP_HOST")
-	// server.Port = port
-	// server.Username = os.Getenv("SMTP_USER")
-	// server.Password = os.Getenv("SMTP_PASS")
-	// server.Encryption = mail.EncryptionTLS
-	// server.Authentication = mail.AuthLogin
-	// server.KeepAlive = false
-	// server.ConnectTimeout = 10 * time.Second
-	// server.SendTimeout = 10 * time.Second
-
-	var data map[string]string
-	err := json.Unmarshal([]byte(request.Body), &data)
+	port, err := strconv.Atoi(os.Getenv("SMTP_PORT"))
 	if err != nil {
-		return returnError(http.StatusBadRequest), nil
+		return respond(http.StatusInternalServerError, err), nil
 	}
 
-	// form := getForm(data["_form_name"])
-	// message := formatData(form, data)
-	// message, err = generateMessage(form, message)
-	// if err != nil {
-	// 	return &events.APIGatewayProxyResponse{
-	// 		StatusCode: http.StatusInternalServerError,
-	// 		Body:       http.StatusText(http.StatusInternalServerError),
-	// 	}, nil
-	// }
+	server = mail.NewSMTPClient()
+	server.Host = os.Getenv("SMTP_HOST")
+	server.Port = port
+	server.Username = os.Getenv("SMTP_USER")
+	server.Password = os.Getenv("SMTP_PASS")
+	server.Encryption = mail.EncryptionTLS
+	server.Authentication = mail.AuthLogin
+	server.KeepAlive = false
+	server.ConnectTimeout = 10 * time.Second
+	server.SendTimeout = 10 * time.Second
 
-	// err = sendEmail(form, message)
-	// if err != nil {
-	// 	return &events.APIGatewayProxyResponse{
-	// 		StatusCode: http.StatusInternalServerError,
-	// 		Body:       http.StatusText(http.StatusInternalServerError),
-	// 	}, nil
-	// }
+	var data map[string]string
+	err = json.Unmarshal([]byte(request.Body), &data)
+	if err != nil {
+		return respond(http.StatusBadRequest, err), nil
+	}
 
-	return &events.APIGatewayProxyResponse{
-		StatusCode: http.StatusOK,
-		Body:       fmt.Sprintf("Hello, World!\n%+v\n", data),
-	}, nil
+	form := getForm(data["_form_name"])
+	message := formatData(form, data)
+	message, err = generateMessage(form, message)
+	if err != nil {
+		return respond(http.StatusInternalServerError, err), nil
+	}
+
+	err = sendEmail(form, message)
+	if err != nil {
+		return respond(http.StatusInternalServerError, err), nil
+	}
+
+	return respond(http.StatusOK, nil), nil
 }
 
 func getForm(name string) form {
