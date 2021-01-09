@@ -9,7 +9,7 @@ Netlify likes to pretend like no one uses Golang for functions. You can't even u
 Netlify only gives you 100 free submissions per site a month. Most of the time my clients only use forms as a pseudo send email service. So why not take advantage of the 125k per site a month netlify function limit.
 
 ## How to use
-Other Jamstack email services ask you to provide all the to, from, and subject information on every request. Which in my opinion kind of defeats the purpose of hiding your email in the first place. So we use Netlify Environment Variables. Unfortunately functions can't read variables in `netlify.toml` so you'll have to add them all the the UI.
+Other Jamstack email services ask you to provide all the to, from, and subject information on every request. Which in my opinion kind of defeats the purpose of hiding your email in the first place. So we use Netlify Environment Variables. Unfortunately [functions can't read variables in `netlify.toml`](https://github.com/netlify/netlify-lambda/issues/59#issuecomment-482454231) so you'll have to add them all the the UI.
 
 ### SMTP
 We use SMTP to send the emails. You'll need to add the following vars.
