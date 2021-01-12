@@ -89,6 +89,7 @@ const template = `
 var server *mail.SMTPServer
 
 func main() {
+	fmt.Println(os.Getenv("SMTP_HOST"))
 	lambda.Start(handler)
 }
 
