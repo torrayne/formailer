@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -101,25 +102,18 @@ func respond(code int, err error) *events.APIGatewayProxyResponse {
 		return response
 	}
 
-	str, err := json.Marshal(newError(err))
-	if err != nil {
-		code = http.StatusInternalServerError
-		response.Body = http.StatusText(http.StatusInternalServerError)
-	} else {
-		response.Body = string(str)
-	}
-
+	response.Body = fmt.Sprintf(`{"message":"%s"}`, err.Error())
 	return response
-}
-
-func newError(err error) map[string]string {
-	return map[string]string{"message": err.Error()}
 }
 
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	port, err := strconv.Atoi(os.Getenv("SMTP_PORT"))
 	if err != nil {
 		return respond(http.StatusInternalServerError, err), nil
+	}
+
+	if true {
+		respond(200, errors.New("Temporary error: \"YES\""))
 	}
 
 	server = mail.NewSMTPClient()
