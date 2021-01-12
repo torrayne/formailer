@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -117,33 +118,37 @@ func respond(code int, err error) *events.APIGatewayProxyResponse {
 		return response
 	}
 
-	response.Body = fmt.Sprintf(`{"message":"%s"}`, err.Error())
+	str, err := json.Marshal(map[string]string{"message": err.Error()})
+	if err != nil {
+		code = http.StatusInternalServerError
+		response.Body = http.StatusText(http.StatusInternalServerError)
+	} else {
+		response.Body = string(str)
+	}
+
 	return response
 }
 
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
-	fmt.Println(server.Host)
+	var data map[string]string
+	err := json.Unmarshal([]byte(request.Body), &data)
+	if err != nil {
+		return respond(http.StatusBadRequest, err), nil
+	}
 
-	// var data map[string]string
-	// err = json.Unmarshal([]byte(request.Body), &data)
-	// if err != nil {
-	// 	return respond(http.StatusBadRequest, err), nil
-	// }
+	form := getForm(data["_form_name"])
+	message := formatData(form, data)
+	message, err = generateMessage(form, message)
+	if err != nil {
+		return respond(http.StatusInternalServerError, err), nil
+	}
 
-	// form := getForm(data["_form_name"])
-	// message := formatData(form, data)
-	// message, err = generateMessage(form, message)
-	// if err != nil {
-	// 	return respond(http.StatusInternalServerError, err), nil
-	// }
+	err = sendEmail(form, message)
+	if err != nil {
+		return respond(http.StatusInternalServerError, err), nil
+	}
 
-	// err = sendEmail(form, message)
-	// if err != nil {
-	// 	return respond(http.StatusInternalServerError, err), nil
-	// }
-
-	// return respond(http.StatusOK, nil), nil
-	return respond(200, errors.New("Temporary error: \"YES\"")), nil
+	return respond(http.StatusOK, nil), nil
 }
 
 func getForm(name string) form {
