@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"mime/multipart"
 	"net/http"
 	"net/url"
@@ -171,12 +173,16 @@ func getData(request events.APIGatewayProxyRequest) (map[string]string, error) {
 	} else if strings.Contains(contentType, "multipart/form-data") {
 		fmt.Println(request.Body)
 		reader := multipart.NewReader(strings.NewReader(request.Body), "\n")
-		form, err := reader.ReadForm(5 * (1 << 20))
-		if err != nil {
-			return data, err
+		for {
+			part, err := reader.NextPart()
+			if err == io.EOF {
+				break
+			}
+			buf := new(bytes.Buffer)
+			buf.ReadFrom(part)
+			fmt.Println(buf.String())
 		}
-
-		fmt.Printf("%+v\n%+v", form.Value, form.File)
+		return data, errors.New("temp")
 	} else {
 		fmt.Println(contentType)
 		return data, errors.New("invalid content type")
