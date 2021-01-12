@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -89,14 +88,8 @@ const template = `
 var server *mail.SMTPServer
 
 func main() {
-	port, err := strconv.Atoi(os.Getenv("SMTP_PORT"))
-	if err != nil {
-		panic(errors.New("could not parse SMTP_PORT"))
-	}
-
 	server = mail.NewSMTPClient()
 	server.Host = os.Getenv("SMTP_HOST")
-	server.Port = port
 	server.Username = os.Getenv("SMTP_USER")
 	server.Password = os.Getenv("SMTP_PASS")
 	server.Encryption = mail.EncryptionTLS
@@ -130,8 +123,15 @@ func respond(code int, err error) *events.APIGatewayProxyResponse {
 }
 
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+	port, err := strconv.Atoi(os.Getenv("SMTP_PORT"))
+	if err != nil {
+		fmt.Println("could not parse SMTP_PORT")
+		return respond(500, nil), nil
+	}
+	server.Port = port
+
 	var data map[string]string
-	err := json.Unmarshal([]byte(request.Body), &data)
+	err = json.Unmarshal([]byte(request.Body), &data)
 	if err != nil {
 		return respond(http.StatusBadRequest, err), nil
 	}
