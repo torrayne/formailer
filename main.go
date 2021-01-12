@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -89,7 +88,22 @@ const template = `
 var server *mail.SMTPServer
 
 func main() {
-	fmt.Println(os.Getenv("SMTP_HOST"))
+	port, err := strconv.Atoi(os.Getenv("SMTP_PORT"))
+	if err != nil {
+		panic(errors.New("could not parse SMTP_PORT"))
+	}
+
+	server = mail.NewSMTPClient()
+	server.Host = os.Getenv("SMTP_HOST")
+	server.Port = port
+	server.Username = os.Getenv("SMTP_USER")
+	server.Password = os.Getenv("SMTP_PASS")
+	server.Encryption = mail.EncryptionTLS
+	server.Authentication = mail.AuthLogin
+	server.KeepAlive = false
+	server.ConnectTimeout = 10 * time.Second
+	server.SendTimeout = 10 * time.Second
+
 	lambda.Start(handler)
 }
 
@@ -108,45 +122,28 @@ func respond(code int, err error) *events.APIGatewayProxyResponse {
 }
 
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
-	port, err := strconv.Atoi(os.Getenv("SMTP_PORT"))
-	if err != nil {
-		return respond(http.StatusInternalServerError, err), nil
-	}
+	fmt.Println(server.Host)
 
-	if true {
-		return respond(200, errors.New("Temporary error: \"YES\"")), nil
-	}
+	// var data map[string]string
+	// err = json.Unmarshal([]byte(request.Body), &data)
+	// if err != nil {
+	// 	return respond(http.StatusBadRequest, err), nil
+	// }
 
-	server = mail.NewSMTPClient()
-	server.Host = os.Getenv("SMTP_HOST")
-	server.Port = port
-	server.Username = os.Getenv("SMTP_USER")
-	server.Password = os.Getenv("SMTP_PASS")
-	server.Encryption = mail.EncryptionTLS
-	server.Authentication = mail.AuthLogin
-	server.KeepAlive = false
-	server.ConnectTimeout = 10 * time.Second
-	server.SendTimeout = 10 * time.Second
+	// form := getForm(data["_form_name"])
+	// message := formatData(form, data)
+	// message, err = generateMessage(form, message)
+	// if err != nil {
+	// 	return respond(http.StatusInternalServerError, err), nil
+	// }
 
-	var data map[string]string
-	err = json.Unmarshal([]byte(request.Body), &data)
-	if err != nil {
-		return respond(http.StatusBadRequest, err), nil
-	}
+	// err = sendEmail(form, message)
+	// if err != nil {
+	// 	return respond(http.StatusInternalServerError, err), nil
+	// }
 
-	form := getForm(data["_form_name"])
-	message := formatData(form, data)
-	message, err = generateMessage(form, message)
-	if err != nil {
-		return respond(http.StatusInternalServerError, err), nil
-	}
-
-	err = sendEmail(form, message)
-	if err != nil {
-		return respond(http.StatusInternalServerError, err), nil
-	}
-
-	return respond(http.StatusOK, nil), nil
+	// return respond(http.StatusOK, nil), nil
+	return respond(200, errors.New("Temporary error: \"YES\"")), nil
 }
 
 func getForm(name string) form {
