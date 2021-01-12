@@ -167,6 +167,7 @@ func getData(request events.APIGatewayProxyRequest) (map[string]string, error) {
 		data["Name"] = "Daniel Atwood"
 		data["Subject"] = "New website"
 	} else {
+		fmt.Println(contentType)
 		return data, errors.New("invalid content type")
 	}
 
