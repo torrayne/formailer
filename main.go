@@ -165,6 +165,7 @@ func getData(request events.APIGatewayProxyRequest) (map[string]string, error) {
 			return data, err
 		}
 	default:
+		fmt.Println(request.Headers)
 		return data, errors.New("invalid content type")
 	}
 
