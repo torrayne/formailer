@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -152,10 +153,21 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 
 func getData(request events.APIGatewayProxyRequest) (map[string]string, error) {
 	var data map[string]string
-	err := json.Unmarshal([]byte(request.Body), &data)
-	if err != nil {
-		return data, err
+
+	switch request.Headers["content-type"] {
+	case "application/x-www-form-encoded", "multipart/form-data":
+		fmt.Println(request.Body)
+		data["Name"] = "Daniel Atwood"
+		data["Subject"] = "New website"
+	case "application/json":
+		err := json.Unmarshal([]byte(request.Body), &data)
+		if err != nil {
+			return data, err
+		}
+	default:
+		return data, errors.New("invalid content type")
 	}
+
 	return data, nil
 }
 
