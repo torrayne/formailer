@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"os"
@@ -169,8 +170,13 @@ func getData(request events.APIGatewayProxyRequest) (map[string]string, error) {
 		}
 	} else if strings.Contains(contentType, "multipart/form-data") {
 		fmt.Println(request.Body)
-		data["Name"] = "Daniel Atwood"
-		data["Subject"] = "New website"
+		reader := multipart.NewReader(strings.NewReader(request.Body), "\n")
+		form, err := reader.ReadForm(5 * (1 << 20))
+		if err != nil {
+			return data, err
+		}
+
+		fmt.Printf("%+v\n%+v", form.Value, form.File)
 	} else {
 		fmt.Println(contentType)
 		return data, errors.New("invalid content type")
