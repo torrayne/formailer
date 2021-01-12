@@ -159,7 +159,7 @@ func getData(request events.APIGatewayProxyRequest) (map[string]string, error) {
 		if err != nil {
 			return data, err
 		}
-	} else if strings.Contains(contentType, "application/x-www-form-encoded") ||
+	} else if strings.Contains(contentType, "application/x-www-form-urlencoded") ||
 		strings.Contains(contentType, "multipart/form-data") {
 		fmt.Println(request.Body)
 		data["Name"] = "Daniel Atwood"
