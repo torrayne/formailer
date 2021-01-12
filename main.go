@@ -26,27 +26,25 @@ type form struct {
 
 const stylesheet = `
 body {
-	background: #f5f5f5;
 	font-family: sans-serif;
 }
 
 #wrapper {
-	background: #fff;
 	padding: 30px 20px;
 	border: 1px solid #ccc;
 	border-radius: 4px;
-	margin: 20px auto 10px;
+	margin: 20px 0 10px;
 }
 
 .content {
 	width: 100%;
 	max-width: 800px;
-	margin: 0 auto 0;
+	margin: 0;
 	box-sizing: border-box;
 }
 
 h1 {
-	font-size: 2rem;
+	font-size: 1.8rem;
 	color: #212121;
 	font-weight: bold;
 	margin: 0 0 10px;
@@ -63,7 +61,7 @@ td {
 	border-top: 1px solid #ddd;
 	text-align: left;
 	color: #404040;
-	font-size: 1.2rem;
+	font-size: 1.1rem;
 	font-weight: 400;
 }
 
