@@ -114,7 +114,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 	}
 
 	if true {
-		respond(200, errors.New("Temporary error: \"YES\""))
+		return respond(200, errors.New("Temporary error: \"YES\"")), nil
 	}
 
 	server = mail.NewSMTPClient()
