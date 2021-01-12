@@ -130,8 +130,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 	}
 	server.Port = port
 
-	var data map[string]string
-	err = json.Unmarshal([]byte(request.Body), &data)
+	data, err := getData(request)
 	if err != nil {
 		return respond(http.StatusBadRequest, err), nil
 	}
@@ -149,6 +148,15 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 	}
 
 	return respond(http.StatusOK, nil), nil
+}
+
+func getData(request events.APIGatewayProxyRequest) (map[string]string, error) {
+	var data map[string]string
+	err := json.Unmarshal([]byte(request.Body), &data)
+	if err != nil {
+		return data, err
+	}
+	return data, nil
 }
 
 func getForm(name string) form {
