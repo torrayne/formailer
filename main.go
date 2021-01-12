@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -150,8 +151,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 }
 
 func getData(request events.APIGatewayProxyRequest) (map[string]string, error) {
-	var data map[string]string
-
+	data := make(map[string]string)
 	contentType := request.Headers["content-type"]
 
 	if strings.Contains(contentType, "application/json") {
@@ -159,8 +159,15 @@ func getData(request events.APIGatewayProxyRequest) (map[string]string, error) {
 		if err != nil {
 			return data, err
 		}
-	} else if strings.Contains(contentType, "application/x-www-form-urlencoded") ||
-		strings.Contains(contentType, "multipart/form-data") {
+	} else if strings.Contains(contentType, "application/x-www-form-urlencoded") {
+		vals, err := url.ParseQuery(request.Body)
+		if err != nil {
+			return data, err
+		}
+		for k := range vals {
+			data[k] = vals.Get(k)
+		}
+	} else if strings.Contains(contentType, "multipart/form-data") {
 		fmt.Println(request.Body)
 		data["Name"] = "Daniel Atwood"
 		data["Subject"] = "New website"
