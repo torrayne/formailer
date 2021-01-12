@@ -154,20 +154,19 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 func getData(request events.APIGatewayProxyRequest) (map[string]string, error) {
 	var data map[string]string
 
-	switch request.Headers["content-type"] {
-	case "application/x-www-form-encoded", "multipart/form-data":
-		fmt.Println(request.Body)
-		data["Name"] = "Daniel Atwood"
-		data["Subject"] = "New website"
-	case "application/json":
+	contentType := request.MultiValueHeaders["content-type"]
+
+	if stringsContains(contentType, "application/json") {
 		err := json.Unmarshal([]byte(request.Body), &data)
 		if err != nil {
 			return data, err
 		}
-	default:
-		for k, v := range request.Headers {
-			fmt.Println(k, v)
-		}
+	} else if stringsContains(contentType, "application/x-www-form-encoded") ||
+		stringsContains(contentType, "multipart/form-data") {
+		fmt.Println(request.Body)
+		data["Name"] = "Daniel Atwood"
+		data["Subject"] = "New website"
+	} else {
 		return data, errors.New("invalid content type")
 	}
 
@@ -216,4 +215,13 @@ func sendEmail(form form, message string) error {
 	}
 	defer client.Close()
 	return email.Send(client)
+}
+
+func stringsContains(slice []string, needle string) bool {
+	for _, s := range slice {
+		if s == needle {
+			return true
+		}
+	}
+	return false
 }
