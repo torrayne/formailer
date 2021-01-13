@@ -1,7 +1,5 @@
 # Formailer
 
-[![Netlify Status](https://api.netlify.com/api/v1/badges/5729030b-a610-4165-b127-02133bd0e9bf/deploy-status)](https://app.netlify.com/sites/netlify-emailer/deploys)
-
 ![Screenshot](img.png)
 
 Netlify likes to pretend like no one uses Golang for functions. You can't even use `netlify dev` to test them. Well too bad, I like Go.
