@@ -89,9 +89,21 @@ func parseData(contentType, body string) (map[string]string, error) {
 			data[k] = vals.Get(k)
 		}
 	} else if strings.Contains(contentType, "multipart/form-data") {
-		fmt.Println("Content Type", contentType)
+		header := strings.Split(contentType, ";")
+		var boundary string
+		for _, h := range header {
+			h = strings.ToLower(strings.TrimSpace(h))
+			index := strings.Index(h, "boundary")
+			if index > -1 {
+				boundary = h[index+8:]
+			}
+		}
 
-		reader := multipart.NewReader(strings.NewReader(body), "formailer")
+		fmt.Println("Content Type", contentType)
+		fmt.Println("Boundary", boundary)
+		fmt.Println("Body", body)
+
+		reader := multipart.NewReader(strings.NewReader(body), boundary)
 		for {
 			part, err := reader.NextPart()
 			if err == io.EOF {
