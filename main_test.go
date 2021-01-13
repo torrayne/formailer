@@ -16,7 +16,7 @@ func shutdown() {
 }
 
 func TestMain(m *testing.M) {
-	setup()
+	testsetup()
 	code := m.Run()
 	os.Exit(code)
 }
@@ -40,12 +40,9 @@ func TestFormatData(t *testing.T) {
 		subject: "New Contact Form Submission",
 	}
 
-	expected := "<h1>New Contact Submission</h1><table><tbody><tr><th>Name</th><td>Daniel</td></tr><tr><th>Message</th><td>Hello, World!</td></tr></tbody></table>"
+	expected := "<h1>New Contact Submission</h1><table><tbody><tr><th>Name</th><td>Daniel</td></tr></tbody></table>"
 
-	data := map[string]string{
-		"Name":    "Daniel",
-		"Message": "Hello, World!",
-	}
+	data := map[string]string{"Name": "Daniel"}
 	output := formatData(form, data)
 
 	if output != expected {
