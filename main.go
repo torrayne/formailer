@@ -1,5 +1,7 @@
 package main
 
+//go:generate go run generate/main.go
+
 import (
 	"bytes"
 	"context"
@@ -13,6 +15,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -26,66 +29,6 @@ type form struct {
 	from    string
 	subject string
 }
-
-const stylesheet = `
-body {
-	font-family: sans-serif;
-}
-
-#wrapper {
-	padding: 30px 20px;
-	border: 1px solid #ccc;
-	border-radius: 4px;
-	margin: 20px 0 10px;
-}
-
-.content {
-	width: 100%;
-	max-width: 800px;
-	margin: 0;
-	box-sizing: border-box;
-}
-
-h1 {
-	font-size: 1.8rem;
-	color: #212121;
-	font-weight: bold;
-	margin: 0 0 10px;
-}
-
-table {
-	border-collapse: collapse;
-}
-
-th,
-td {
-	vertical-align: top;
-	padding: 10px 10px;
-	border-top: 1px solid #ddd;
-	text-align: left;
-	color: #404040;
-	font-size: 1.1rem;
-	font-weight: 400;
-}
-
-th {
-	font-weight: bold;
-}
-
-.attribute {
-	padding: 0 20px;
-	text-decoration: none;
-	color: #404040;
-}
-`
-
-const template = `
-<html lang="en">
-<head><style>%s</style></head>
-<body>
-<div id="wrapper" class="content">%s</div>
-<p class="content"><a class="attribute" href="https://atwood.io">Powered by Formailer © Atwood.io</a></p></body>
-</html>`
 
 func setup() (*mail.SMTPServer, error) {
 	port, err := strconv.Atoi(os.Getenv("SMTP_PORT"))
@@ -193,7 +136,18 @@ func formatData(form form, data map[string]string) string {
 }
 
 func generateMessage(form form, message string) (string, error) {
-	return inliner.Inline(fmt.Sprintf(template, stylesheet, message))
+	t, err := template.New("email").Parse(emailTemplate)
+	if err != nil {
+		return "", err
+	}
+
+	var email bytes.Buffer
+	err = t.Execute(&email, message)
+	if err != nil {
+		return "", err
+	}
+
+	return inliner.Inline(email.String())
 }
 
 func sendEmail(server *mail.SMTPServer, form form, message string) error {
