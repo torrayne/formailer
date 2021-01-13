@@ -1,6 +1,8 @@
 package formailer
 
 import (
+	"bytes"
+	"mime/multipart"
 	"os"
 	"testing"
 )
@@ -31,6 +33,31 @@ func TestGetForm(t *testing.T) {
 
 	if contact != getForm(contact.name) {
 		t.Error("Failed to read form from env")
+	}
+}
+
+func TestParseData(t *testing.T) {
+	var out bytes.Buffer
+	w := multipart.NewWriter(&out)
+
+	formData := map[string]string{
+		"name":    "Daniel",
+		"subject": "Free Consultation",
+	}
+
+	for name, value := range formData {
+		fw, err := w.CreateFormField(name)
+		if err != nil {
+			t.Error(err)
+		}
+		fw.Write([]byte(value))
+	}
+
+	w.Close()
+
+	_, err := parseData(w.FormDataContentType(), out.String())
+	if err != nil {
+		t.Errorf("Failed to parse data: %v", err)
 	}
 }
 

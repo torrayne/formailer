@@ -95,7 +95,8 @@ func parseData(contentType, body string) (map[string]string, error) {
 			h = strings.ToLower(strings.TrimSpace(h))
 			index := strings.Index(h, "boundary")
 			if index > -1 {
-				boundary = h[index+8:]
+				boundary = strings.TrimSpace(h[index+9:])
+				break
 			}
 		}
 
