@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func setup() {
+func testsetup() {
 	os.Setenv("FORM_CONTACT_TO", "djatwood01@gmail.com")
 	os.Setenv("FORM_CONTACT_FROM", "daniel@atwood.io")
 	os.Setenv("FORM_CONTACT_SUBJECT", "New Contact Form Submission")

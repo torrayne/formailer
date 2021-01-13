@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aymerick/douceur/inliner"
 	mail "github.com/xhit/go-simple-mail/v2"
 )
@@ -88,11 +87,16 @@ const template = `
 <p class="content"><a class="attribute" href="https://atwood.io">Powered by Formailer © Atwood.io</a></p></body>
 </html>`
 
-var server *mail.SMTPServer
+func setup() (*mail.SMTPServer, error) {
+	port, err := strconv.Atoi(os.Getenv("SMTP_PORT"))
+	if err != nil {
+		fmt.Println("could not parse SMTP_PORT")
+		return nil, err
+	}
 
-func main() {
-	server = mail.NewSMTPClient()
+	server := mail.NewSMTPClient()
 	server.Host = os.Getenv("SMTP_HOST")
+	server.Port = port
 	server.Username = os.Getenv("SMTP_USER")
 	server.Password = os.Getenv("SMTP_PASS")
 	server.Encryption = mail.EncryptionTLS
@@ -101,7 +105,7 @@ func main() {
 	server.ConnectTimeout = 10 * time.Second
 	server.SendTimeout = 10 * time.Second
 
-	lambda.Start(handler)
+	return server, nil
 }
 
 func respond(code int, err error) *events.APIGatewayProxyResponse {
@@ -123,34 +127,6 @@ func respond(code int, err error) *events.APIGatewayProxyResponse {
 	}
 
 	return response
-}
-
-func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
-	port, err := strconv.Atoi(os.Getenv("SMTP_PORT"))
-	if err != nil {
-		fmt.Println("could not parse SMTP_PORT")
-		return respond(500, nil), nil
-	}
-	server.Port = port
-
-	data, err := getData(request)
-	if err != nil {
-		return respond(http.StatusBadRequest, err), nil
-	}
-
-	form := getForm(data["_form_name"])
-	message := formatData(form, data)
-	message, err = generateMessage(form, message)
-	if err != nil {
-		return respond(http.StatusInternalServerError, err), nil
-	}
-
-	err = sendEmail(form, message)
-	if err != nil {
-		return respond(http.StatusInternalServerError, err), nil
-	}
-
-	return respond(http.StatusOK, nil), nil
 }
 
 func getData(request events.APIGatewayProxyRequest) (map[string]string, error) {
@@ -220,7 +196,7 @@ func generateMessage(form form, message string) (string, error) {
 	return inliner.Inline(fmt.Sprintf(template, stylesheet, message))
 }
 
-func sendEmail(form form, message string) error {
+func sendEmail(server *mail.SMTPServer, form form, message string) error {
 	email := mail.NewMSG()
 	email.AddTo(form.to)
 	email.SetFrom(form.from)
@@ -233,4 +209,31 @@ func sendEmail(form form, message string) error {
 	}
 	defer client.Close()
 	return email.Send(client)
+}
+
+// Handler is exported
+func Handler(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+	server, err := setup()
+	if err != nil {
+		return respond(500, nil), nil
+	}
+
+	data, err := getData(request)
+	if err != nil {
+		return respond(http.StatusBadRequest, err), nil
+	}
+
+	form := getForm(data["_form_name"])
+	message := formatData(form, data)
+	message, err = generateMessage(form, message)
+	if err != nil {
+		return respond(http.StatusInternalServerError, err), nil
+	}
+
+	err = sendEmail(server, form, message)
+	if err != nil {
+		return respond(http.StatusInternalServerError, err), nil
+	}
+
+	return respond(http.StatusOK, nil), nil
 }
