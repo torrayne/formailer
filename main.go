@@ -72,17 +72,16 @@ func respond(code int, err error) *events.APIGatewayProxyResponse {
 	return response
 }
 
-func getData(request events.APIGatewayProxyRequest) (map[string]string, error) {
+func parseData(contentType, body string) (map[string]string, error) {
 	data := make(map[string]string)
-	contentType := request.Headers["content-type"]
 
 	if strings.Contains(contentType, "application/json") {
-		err := json.Unmarshal([]byte(request.Body), &data)
+		err := json.Unmarshal([]byte(body), &data)
 		if err != nil {
 			return data, err
 		}
 	} else if strings.Contains(contentType, "application/x-www-form-urlencoded") {
-		vals, err := url.ParseQuery(request.Body)
+		vals, err := url.ParseQuery(body)
 		if err != nil {
 			return data, err
 		}
@@ -90,17 +89,20 @@ func getData(request events.APIGatewayProxyRequest) (map[string]string, error) {
 			data[k] = vals.Get(k)
 		}
 	} else if strings.Contains(contentType, "multipart/form-data") {
-		fmt.Println(request.Body)
-		reader := multipart.NewReader(strings.NewReader(request.Body), "\n")
+		fmt.Println("Content Type", contentType)
+
+		reader := multipart.NewReader(strings.NewReader(body), "formailer")
 		for {
 			part, err := reader.NextPart()
 			if err == io.EOF {
 				break
 			}
-			buf := new(bytes.Buffer)
-			buf.ReadFrom(part)
-			fmt.Println(buf.String())
+			value := new(bytes.Buffer)
+			value.ReadFrom(part)
+			data[part.FormName()] = value.String()
 		}
+
+		fmt.Println(data)
 		return data, errors.New("temp")
 	} else {
 		fmt.Println(contentType)
@@ -172,7 +174,7 @@ func Handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 		return respond(500, nil), nil
 	}
 
-	data, err := getData(request)
+	data, err := parseData(request.Headers["content-type"], request.Body)
 	if err != nil {
 		return respond(http.StatusBadRequest, err), nil
 	}
