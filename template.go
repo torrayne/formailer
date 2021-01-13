@@ -1,4 +1,4 @@
-package main
+package formailer
 
 const emailTemplate = `<html lang="en">
 <head>
