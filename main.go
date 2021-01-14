@@ -107,6 +107,9 @@ func parseData(contentType, body string) (data map[string]string, attachments []
 			}
 		}
 
+		fmt.Println(header)
+		fmt.Println(boundary)
+
 		var decodedBody []byte
 		decodedBody, err = base64.StdEncoding.DecodeString(body)
 		if err != nil {
