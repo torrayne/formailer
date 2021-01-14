@@ -1,8 +1,7 @@
 package formailer
 
 import (
-	"bytes"
-	"mime/multipart"
+	"fmt"
 	"os"
 	"testing"
 )
@@ -37,28 +36,37 @@ func TestGetForm(t *testing.T) {
 }
 
 func TestParseData(t *testing.T) {
-	var out bytes.Buffer
-	w := multipart.NewWriter(&out)
+	// var out bytes.Buffer
+	// w := multipart.NewWriter(&out)
 
-	formData := map[string]string{
-		"name":    "Daniel",
-		"subject": "Free Consultation",
-	}
+	// formData := map[string]string{
+	// 	"name":    "Daniel",
+	// 	"subject": "Free Consultation",
+	// }
 
-	for name, value := range formData {
-		fw, err := w.CreateFormField(name)
-		if err != nil {
-			t.Error(err)
-		}
-		fw.Write([]byte(value))
-	}
+	// for name, value := range formData {
+	// 	fw, err := w.CreateFormField(name)
+	// 	if err != nil {
+	// 		t.Error(err)
+	// 	}
+	// 	fw.Write([]byte(value))
+	// }
 
-	w.Close()
+	// w.Close()
 
-	_, err := parseData(w.FormDataContentType(), out.String())
+	// _, err := parseData(w.FormDataContentType(), out.String())
+	// if err != nil {
+	// 	t.Errorf("Failed to parse data: %v", err)
+	// }
+
+	body := "LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0zNTk3MDk5NzAzNjY4MTM2NDQzMjUyMzE0NjAyDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9Ik5hbWUiDQoNCkRhbmllbA0KLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0zNTk3MDk5NzAzNjY4MTM2NDQzMjUyMzE0NjAyDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9IlN1YmplY3QiDQoNCm5ldyBzdWJqZWN0DQotLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLTM1OTcwOTk3MDM2NjgxMzY0NDMyNTIzMTQ2MDINCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsgbmFtZT0iTWVzc2FnZSINCg0KdGhpcyBpcyB0aGUgbWVzc2FnZQ0KLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0zNTk3MDk5NzAzNjY4MTM2NDQzMjUyMzE0NjAyDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9IlBob3RvIjsgZmlsZW5hbWU9IkZGNEQwMC0wLjgucG5nIg0KQ29udGVudC1UeXBlOiBpbWFnZS9wbmcNCg0KiVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAAAl21bKAAAAA1BMVEX/TQBcNTh/AAAAAXRSTlPM0jRW/QAAAApJREFUeJxjYgAAAAYAAzY3fKgAAAAASUVORK5CYIINCi0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tMzU5NzA5OTcwMzY2ODEzNjQ0MzI1MjMxNDYwMi0t"
+	contentType := "multipart/form-data; boundary=---------------------------3597099703668136443252314602"
+	data, attachments, err := parseData(contentType, body)
 	if err != nil {
 		t.Errorf("Failed to parse data: %v", err)
 	}
+
+	fmt.Println(data, attachments)
 }
 
 func TestFormatData(t *testing.T) {

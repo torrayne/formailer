@@ -5,6 +5,7 @@ package formailer
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -28,6 +29,12 @@ type form struct {
 	to      string
 	from    string
 	subject string
+}
+
+type attachment struct {
+	filename string
+	mimeType string
+	data     []byte
 }
 
 func setup() (*mail.SMTPServer, error) {
@@ -72,18 +79,19 @@ func respond(code int, err error) *events.APIGatewayProxyResponse {
 	return response
 }
 
-func parseData(contentType, body string) (map[string]string, error) {
-	data := make(map[string]string)
+func parseData(contentType, body string) (data map[string]string, attachments []attachment, err error) {
+	data = make(map[string]string)
 
 	if strings.Contains(contentType, "application/json") {
-		err := json.Unmarshal([]byte(body), &data)
+		err = json.Unmarshal([]byte(body), &data)
 		if err != nil {
-			return data, err
+			return
 		}
 	} else if strings.Contains(contentType, "application/x-www-form-urlencoded") {
-		vals, err := url.ParseQuery(body)
+		var vals url.Values
+		vals, err = url.ParseQuery(body)
 		if err != nil {
-			return data, err
+			return
 		}
 		for k := range vals {
 			data[k] = vals.Get(k)
@@ -92,7 +100,6 @@ func parseData(contentType, body string) (map[string]string, error) {
 		header := strings.Split(contentType, ";")
 		var boundary string
 		for _, h := range header {
-			h = strings.ToLower(strings.TrimSpace(h))
 			index := strings.Index(h, "boundary")
 			if index > -1 {
 				boundary = strings.TrimSpace(h[index+9:])
@@ -100,29 +107,45 @@ func parseData(contentType, body string) (map[string]string, error) {
 			}
 		}
 
-		fmt.Println("Content Type", contentType)
-		fmt.Println("Boundary", boundary)
-		fmt.Println("Body", body)
+		var decodedBody []byte
+		decodedBody, err = base64.StdEncoding.DecodeString(body)
+		if err != nil {
+			return
+		}
 
-		reader := multipart.NewReader(strings.NewReader(body), boundary)
+		reader := multipart.NewReader(bytes.NewReader(decodedBody), boundary)
 		for {
-			part, err := reader.NextPart()
+			var part *multipart.Part
+			part, err = reader.NextPart()
 			if err == io.EOF {
 				break
 			}
+			if err != nil {
+				return
+			}
+
 			value := new(bytes.Buffer)
 			value.ReadFrom(part)
-			data[part.FormName()] = value.String()
-		}
 
-		fmt.Println(data)
-		return data, errors.New("temp")
+			filename := part.FileName()
+			if len(filename) > 0 {
+				attachment := attachment{
+					filename: part.FileName(),
+					mimeType: part.Header.Get("Content-Type"),
+					data:     value.Bytes(),
+				}
+				attachments = append(attachments, attachment)
+				data[part.FormName()] = part.FileName()
+			} else {
+				data[part.FormName()] = value.String()
+			}
+		}
 	} else {
 		fmt.Println(contentType)
-		return data, errors.New("invalid content type")
+		err = errors.New("invalid content type")
 	}
 
-	return data, nil
+	return
 }
 
 func getForm(name string) form {
@@ -165,12 +188,16 @@ func generateMessage(form form, message string) (string, error) {
 	return inliner.Inline(email.String())
 }
 
-func sendEmail(server *mail.SMTPServer, form form, message string) error {
+func sendEmail(server *mail.SMTPServer, form form, message string, attachments []attachment) error {
 	email := mail.NewMSG()
 	email.AddTo(form.to)
 	email.SetFrom(form.from)
 	email.SetSubject(form.subject)
 	email.SetBody(mail.TextHTML, message)
+
+	for _, attachment := range attachments {
+		email.AddAttachmentData(attachment.data, attachment.filename, attachment.mimeType)
+	}
 
 	client, err := server.Connect()
 	if err != nil {
@@ -187,7 +214,7 @@ func Handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 		return respond(500, nil), nil
 	}
 
-	data, err := parseData(request.Headers["content-type"], request.Body)
+	data, attachments, err := parseData(request.Headers["content-type"], request.Body)
 	if err != nil {
 		return respond(http.StatusBadRequest, err), nil
 	}
@@ -199,7 +226,7 @@ func Handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 		return respond(http.StatusInternalServerError, err), nil
 	}
 
-	err = sendEmail(server, form, message)
+	err = sendEmail(server, form, message, attachments)
 	if err != nil {
 		return respond(http.StatusInternalServerError, err), nil
 	}
