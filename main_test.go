@@ -30,8 +30,12 @@ func TestGetForm(t *testing.T) {
 		subject: "New Contact Form Submission",
 	}
 
-	if contact != getForm(contact.name) {
-		t.Error("Failed to read form from env")
+	res, err := getForm(contact.name)
+	if err != nil {
+		t.Errorf("Error getting form: %w", err)
+	}
+	if contact != res {
+		t.Error("Unexpected result reading form from env")
 	}
 }
 
@@ -59,7 +63,7 @@ func TestFormatData(t *testing.T) {
 	expected := "<h1>New Contact Submission</h1><table><tbody><tr><th>Name</th><td>Daniel</td></tr></tbody></table>"
 
 	data := formData{values: map[string]string{"Name": "Daniel"}}
-	output := formatData(form, &data)
+	output := data.format(form)
 
 	if output != expected {
 		t.Error("Failed to format data")

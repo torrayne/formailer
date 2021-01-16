@@ -4,7 +4,6 @@ package formailer
 
 import (
 	"bytes"
-	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -45,8 +44,7 @@ type attachment struct {
 func setup() (*mail.SMTPServer, error) {
 	port, err := strconv.Atoi(os.Getenv("SMTP_PORT"))
 	if err != nil {
-		fmt.Println("could not parse SMTP_PORT")
-		return nil, err
+		return nil, errors.New("could not parse SMTP_PORT")
 	}
 
 	server := mail.NewSMTPClient()
@@ -63,22 +61,25 @@ func setup() (*mail.SMTPServer, error) {
 	return server, nil
 }
 
-func respond(code int, err error) *events.APIGatewayProxyResponse {
+func respond(code int, err error, headers ...[2]string) *events.APIGatewayProxyResponse {
 	response := &events.APIGatewayProxyResponse{
 		StatusCode: code,
 		Body:       http.StatusText(code),
+		Headers:    make(map[string]string),
 	}
 
-	if err == nil {
-		return response
+	for _, h := range headers {
+		response.Headers[h[0]] = h[1]
 	}
 
-	str, err := json.Marshal(map[string]string{"message": err.Error()})
 	if err != nil {
-		code = http.StatusInternalServerError
-		response.Body = http.StatusText(http.StatusInternalServerError)
-	} else {
-		response.Body = string(str)
+		str, err := json.Marshal(map[string]string{"message": err.Error()})
+		if err != nil {
+			code = http.StatusInternalServerError
+			response.Body = http.StatusText(http.StatusInternalServerError)
+		} else {
+			response.Body = string(str)
+		}
 	}
 
 	return response
@@ -96,7 +97,6 @@ func parseData(contentType, body string) (*formData, error) {
 	} else if strings.Contains(contentType, "multipart/form-data") {
 		err = data.parseMultipartForm(contentType, body)
 	} else {
-		fmt.Println(contentType)
 		err = errors.New("invalid content type")
 	}
 
@@ -161,18 +161,7 @@ func (data *formData) parseMultipartForm(contentType, body string) error {
 	}
 }
 
-func getForm(name string) form {
-	prefix := fmt.Sprintf("FORM_%s_", strings.ToUpper(name))
-	form := form{
-		name:    name,
-		to:      os.Getenv(prefix + "TO"),
-		from:    os.Getenv(prefix + "FROM"),
-		subject: os.Getenv(prefix + "SUBJECT"),
-	}
-	return form
-}
-
-func formatData(form form, data *formData) string {
+func (data *formData) format(form form) string {
 	message := fmt.Sprintf("<h1>New %s Submission</h1>", strings.Title(form.name))
 
 	message += "<table><tbody>"
@@ -184,6 +173,33 @@ func formatData(form form, data *formData) string {
 	message += "</tbody></table>"
 
 	return message
+}
+
+func getForm(name string) (form, error) {
+	if name == "" {
+		return form{}, errors.New("_form_name missing from input")
+	}
+
+	prefix := fmt.Sprintf("FORM_%s_", strings.ToUpper(name))
+	form := form{
+		name:    name,
+		to:      os.Getenv(prefix + "TO"),
+		from:    os.Getenv(prefix + "FROM"),
+		subject: os.Getenv(prefix + "SUBJECT"),
+	}
+
+	err := errors.New("could not parse form from env: missing")
+	if form.to == "" {
+		return form, fmt.Errorf("%w to", err)
+	}
+	if form.from == "" {
+		return form, fmt.Errorf("%w from", err)
+	}
+	if form.subject == "" {
+		return form, fmt.Errorf("%w subject", err)
+	}
+
+	return form, nil
 }
 
 func generateMessage(form form, message string) (string, error) {
@@ -202,7 +218,7 @@ func generateMessage(form form, message string) (string, error) {
 }
 
 func sendEmail(server *mail.SMTPServer, form form, data *formData) error {
-	message := formatData(form, data)
+	message := data.format(form)
 	message, err := generateMessage(form, message)
 	if err != nil {
 		return err
@@ -226,8 +242,12 @@ func sendEmail(server *mail.SMTPServer, form form, data *formData) error {
 	return email.Send(client)
 }
 
-// Handler is exported
-func Handler(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+// Handler takes in a aws lambda request and sends an email
+func Handler(request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+	if request.HTTPMethod != "POST" {
+		return respond(http.StatusMethodNotAllowed, errors.New("only supports POST requests")), nil
+	}
+
 	server, err := setup()
 	if err != nil {
 		return respond(500, nil), nil
@@ -237,20 +257,24 @@ func Handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 	if err != nil && err != io.EOF {
 		return respond(http.StatusBadRequest, err), nil
 	}
-
-	if _, ok := data.values["_form_name"]; !ok {
-		return respond(http.StatusBadRequest, errors.New("Missing _form_name input")), nil
-	}
 	if v := data.values["faxonly"]; v == "1" {
 		return respond(http.StatusOK, nil), nil
 	}
 
-	form := getForm(data.values["_form_name"])
+	form, err := getForm(data.values["_form_name"])
+	if err != nil {
+		return respond(http.StatusBadGateway, err), nil
+	}
 
 	err = sendEmail(server, form, data)
 	if err != nil {
 		return respond(http.StatusInternalServerError, err), nil
 	}
 
-	return respond(http.StatusOK, nil), nil
+	redirect := [2]string{"location"}
+	if v, ok := data.values["_redirect"]; ok {
+		redirect[1] = v
+	}
+
+	return respond(http.StatusOK, nil, redirect), nil
 }
