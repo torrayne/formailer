@@ -1,7 +1,7 @@
 package formailer
 
 import (
-	"fmt"
+	"io"
 	"os"
 	"testing"
 )
@@ -36,37 +36,18 @@ func TestGetForm(t *testing.T) {
 }
 
 func TestParseData(t *testing.T) {
-	// var out bytes.Buffer
-	// w := multipart.NewWriter(&out)
-
-	// formData := map[string]string{
-	// 	"name":    "Daniel",
-	// 	"subject": "Free Consultation",
-	// }
-
-	// for name, value := range formData {
-	// 	fw, err := w.CreateFormField(name)
-	// 	if err != nil {
-	// 		t.Error(err)
-	// 	}
-	// 	fw.Write([]byte(value))
-	// }
-
-	// w.Close()
-
-	// _, err := parseData(w.FormDataContentType(), out.String())
-	// if err != nil {
-	// 	t.Errorf("Failed to parse data: %v", err)
-	// }
-
-	body := "LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0zNTk3MDk5NzAzNjY4MTM2NDQzMjUyMzE0NjAyDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9Ik5hbWUiDQoNCkRhbmllbA0KLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0zNTk3MDk5NzAzNjY4MTM2NDQzMjUyMzE0NjAyDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9IlN1YmplY3QiDQoNCm5ldyBzdWJqZWN0DQotLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLTM1OTcwOTk3MDM2NjgxMzY0NDMyNTIzMTQ2MDINCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsgbmFtZT0iTWVzc2FnZSINCg0KdGhpcyBpcyB0aGUgbWVzc2FnZQ0KLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0zNTk3MDk5NzAzNjY4MTM2NDQzMjUyMzE0NjAyDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9IlBob3RvIjsgZmlsZW5hbWU9IkZGNEQwMC0wLjgucG5nIg0KQ29udGVudC1UeXBlOiBpbWFnZS9wbmcNCg0KiVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAAAl21bKAAAAA1BMVEX/TQBcNTh/AAAAAXRSTlPM0jRW/QAAAApJREFUeJxjYgAAAAYAAzY3fKgAAAAASUVORK5CYIINCi0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tMzU5NzA5OTcwMzY2ODEzNjQ0MzI1MjMxNDYwMi0t"
-	contentType := "multipart/form-data; boundary=---------------------------3597099703668136443252314602"
-	data, attachments, err := parseData(contentType, body)
-	if err != nil {
-		t.Errorf("Failed to parse data: %v", err)
+	tests := map[string]string{
+		"application/json":                  `{"Name":"Daniel", "message": "This is my message"}`,
+		"application/x-www-form-urlencoded": "name=Daniel&message=This is my message",
+		"multipart/form-data  boundary=---------------------------382742568133097519731421599912": "LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0zODI3NDI1NjgxMzMwOTc1MTk3MzE0MjE1OTk5MTINCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsgbmFtZT0iTmFtZSINCg0KRGFuaWVsDQotLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLTM4Mjc0MjU2ODEzMzA5NzUxOTczMTQyMTU5OTkxMg0KQ29udGVudC1EaXNwb3NpdGlvbjogZm9ybS1kYXRhOyBuYW1lPSJTdWJqZWN0Ig0KDQpRdW90ZSByZXF1ZXN0DQotLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLTM4Mjc0MjU2ODEzMzA5NzUxOTczMTQyMTU5OTkxMg0KQ29udGVudC1EaXNwb3NpdGlvbjogZm9ybS1kYXRhOyBuYW1lPSJNZXNzYWdlIg0KDQpUaGlzIGlzIG15IG1lc3NhZ2UNCi0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tMzgyNzQyNTY4MTMzMDk3NTE5NzMxNDIxNTk5OTEyDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9IlBob3RvIjsgZmlsZW5hbWU9IkZGNEQwMC0wLjgucG5nIg0KQ29udGVudC1UeXBlOiBpbWFnZS9wbmcNCg0KiVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAAAl21bKAAAAA1BMVEX/TQBcNTh/AAAAAXRSTlPM0jRW/QAAAApJREFUeJxjYgAAAAYAAzY3fKgAAAAASUVORK5CYIINCi0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tMzgyNzQyNTY4MTMzMDk3NTE5NzMxNDIxNTk5OTEyLS0N",
 	}
 
-	fmt.Println(data, attachments)
+	for contentType, body := range tests {
+		_, err := parseData(contentType, body)
+		if err != nil && err != io.EOF {
+			t.Errorf("Failed to parse data: %v", err)
+		}
+	}
 }
 
 func TestFormatData(t *testing.T) {
@@ -77,8 +58,8 @@ func TestFormatData(t *testing.T) {
 
 	expected := "<h1>New Contact Submission</h1><table><tbody><tr><th>Name</th><td>Daniel</td></tr></tbody></table>"
 
-	data := map[string]string{"Name": "Daniel"}
-	output := formatData(form, data)
+	data := formData{values: map[string]string{"Name": "Daniel"}}
+	output := formatData(form, &data)
 
 	if output != expected {
 		t.Error("Failed to format data")

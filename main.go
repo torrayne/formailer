@@ -31,6 +31,11 @@ type form struct {
 	subject string
 }
 
+type formData struct {
+	values      map[string]string
+	attachments []attachment
+}
+
 type attachment struct {
 	filename string
 	mimeType string
@@ -79,77 +84,81 @@ func respond(code int, err error) *events.APIGatewayProxyResponse {
 	return response
 }
 
-func parseData(contentType, body string) (data map[string]string, attachments []attachment, err error) {
-	data = make(map[string]string)
+func parseData(contentType, body string) (*formData, error) {
+	data := new(formData)
+	data.values = make(map[string]string)
 
+	var err error
 	if strings.Contains(contentType, "application/json") {
-		err = json.Unmarshal([]byte(body), &data)
-		if err != nil {
-			return
-		}
+		err = data.parseJSON(body)
 	} else if strings.Contains(contentType, "application/x-www-form-urlencoded") {
-		var vals url.Values
-		vals, err = url.ParseQuery(body)
-		if err != nil {
-			return
-		}
-		for k := range vals {
-			data[k] = vals.Get(k)
-		}
+		err = data.parseURLEncoded(body)
 	} else if strings.Contains(contentType, "multipart/form-data") {
-		header := strings.Split(contentType, ";")
-		var boundary string
-		for _, h := range header {
-			index := strings.Index(h, "boundary")
-			if index > -1 {
-				boundary = strings.TrimSpace(h[index+9:])
-				break
-			}
-		}
-
-		var decodedBody []byte
-		decodedBody, err = base64.StdEncoding.DecodeString(body)
-		if err != nil {
-			return
-		}
-
-		fmt.Println(header)
-		fmt.Println(boundary)
-		fmt.Println(string(decodedBody))
-
-		reader := multipart.NewReader(bytes.NewReader(decodedBody), boundary)
-		for {
-			var part *multipart.Part
-			part, err = reader.NextPart()
-			if err == io.EOF {
-				break
-			}
-			if err != nil {
-				return
-			}
-
-			value := new(bytes.Buffer)
-			value.ReadFrom(part)
-
-			filename := part.FileName()
-			if len(filename) > 0 {
-				attachment := attachment{
-					filename: part.FileName(),
-					mimeType: part.Header.Get("Content-Type"),
-					data:     value.Bytes(),
-				}
-				attachments = append(attachments, attachment)
-				data[part.FormName()] = part.FileName()
-			} else {
-				data[part.FormName()] = value.String()
-			}
-		}
+		err = data.parseMultipartForm(contentType, body)
 	} else {
 		fmt.Println(contentType)
 		err = errors.New("invalid content type")
 	}
 
-	return
+	return data, err
+}
+
+func (data *formData) parseJSON(body string) error {
+	return json.Unmarshal([]byte(body), &data.values)
+}
+
+func (data *formData) parseURLEncoded(body string) error {
+	vals, err := url.ParseQuery(body)
+	if err != nil {
+		return err
+	}
+
+	for k := range vals {
+		data.values[k] = vals.Get(k)
+	}
+	return nil
+}
+
+func (data *formData) parseMultipartForm(contentType, body string) error {
+	header := strings.Split(contentType, ";")
+	var boundary string
+	for _, h := range header {
+		index := strings.Index(h, "boundary")
+		if index > -1 {
+			boundary = strings.TrimSpace(h[index+9:])
+			break
+		}
+	}
+
+	decodedBody, err := base64.StdEncoding.DecodeString(body)
+	if err != nil {
+		return err
+	}
+	decodedBody = append(decodedBody, '\n')
+
+	reader := multipart.NewReader(bytes.NewReader(decodedBody), boundary)
+	for {
+		part, err := reader.NextPart()
+		if err != nil {
+			return err
+		}
+
+		value := new(bytes.Buffer)
+		value.ReadFrom(part)
+
+		filename := part.FileName()
+		if len(filename) > 0 {
+			attachment := attachment{
+				filename: part.FileName(),
+				mimeType: part.Header.Get("Content-Type"),
+				data:     value.Bytes(),
+			}
+			data.attachments = append(data.attachments, attachment)
+			data.values[part.FormName()] = part.FileName()
+		} else {
+			data.values[part.FormName()] = value.String()
+		}
+	}
 }
 
 func getForm(name string) form {
@@ -163,11 +172,11 @@ func getForm(name string) form {
 	return form
 }
 
-func formatData(form form, data map[string]string) string {
+func formatData(form form, data *formData) string {
 	message := fmt.Sprintf("<h1>New %s Submission</h1>", strings.Title(form.name))
 
 	message += "<table><tbody>"
-	for k, v := range data {
+	for k, v := range data.values {
 		if k[0] != '_' {
 			message += fmt.Sprintf("<tr><th>%s</th><td>%s</td></tr>", k, v)
 		}
@@ -192,14 +201,20 @@ func generateMessage(form form, message string) (string, error) {
 	return inliner.Inline(email.String())
 }
 
-func sendEmail(server *mail.SMTPServer, form form, message string, attachments []attachment) error {
+func sendEmail(server *mail.SMTPServer, form form, data *formData) error {
+	message := formatData(form, data)
+	message, err := generateMessage(form, message)
+	if err != nil {
+		return err
+	}
+
 	email := mail.NewMSG()
 	email.AddTo(form.to)
 	email.SetFrom(form.from)
 	email.SetSubject(form.subject)
 	email.SetBody(mail.TextHTML, message)
 
-	for _, attachment := range attachments {
+	for _, attachment := range data.attachments {
 		email.AddAttachmentData(attachment.data, attachment.filename, attachment.mimeType)
 	}
 
@@ -218,19 +233,21 @@ func Handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 		return respond(500, nil), nil
 	}
 
-	data, attachments, err := parseData(request.Headers["content-type"], request.Body)
-	if err != nil {
+	data, err := parseData(request.Headers["content-type"], request.Body)
+	if err != nil && err != io.EOF {
 		return respond(http.StatusBadRequest, err), nil
 	}
 
-	form := getForm(data["_form_name"])
-	message := formatData(form, data)
-	message, err = generateMessage(form, message)
-	if err != nil {
-		return respond(http.StatusInternalServerError, err), nil
+	if _, ok := data.values["_form_name"]; !ok {
+		return respond(http.StatusBadRequest, errors.New("Missing _form_name input")), nil
+	}
+	if v := data.values["faxonly"]; v == "1" {
+		return respond(http.StatusOK, nil), nil
 	}
 
-	err = sendEmail(server, form, message, attachments)
+	form := getForm(data.values["_form_name"])
+
+	err = sendEmail(server, form, data)
 	if err != nil {
 		return respond(http.StatusInternalServerError, err), nil
 	}
