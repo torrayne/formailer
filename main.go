@@ -4,6 +4,8 @@ package formailer
 
 import (
 	"bytes"
+	"crypto/rand"
+	"encoding/base32"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -224,11 +226,17 @@ func sendEmail(server *mail.SMTPServer, form form, data *formData) error {
 		return err
 	}
 
+	token := make([]byte, 32)
+	if _, err := rand.Read(token); err != nil {
+		return errors.New("failed to generate message-id")
+	}
+
 	email := mail.NewMSG()
 	email.AddTo(form.to)
 	email.SetFrom(form.from)
 	email.SetSubject(form.subject)
 	email.SetBody(mail.TextHTML, message)
+	email.AddHeader("Message-Id", base32.StdEncoding.EncodeToString(token))
 
 	for _, attachment := range data.attachments {
 		email.AddAttachmentData(attachment.data, attachment.filename, attachment.mimeType)
