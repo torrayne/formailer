@@ -271,9 +271,10 @@ func Handler(request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResp
 		return respond(http.StatusInternalServerError, err), nil
 	}
 
-	redirect := [2]string{"location"}
+	redirect := [2]string{}
 	if v, ok := data.values["_redirect"]; ok {
-		redirect[1] = v
+		redirect = [2]string{"location", v}
+		return respond(http.StatusSeeOther, nil, redirect), nil
 	}
 
 	return respond(http.StatusOK, nil, redirect), nil
