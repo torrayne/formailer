@@ -38,13 +38,11 @@ FORM_CONTACT_SUBJECT="New Contact Submission"
 ```
 
 ### Submissions
-Include a `_form_name` input in your form. And submit as JSON.
+Submit your form using `application/x-www-form-urlencoded`, `multipart/form-data`, or `application/json`. Include the `_form_name` case insensitive. If `faxonly` is checked, you will get a success message but no email will be sent.
 ```html
+<!-- Honey Pot -->
+<input type="checkbox" name="faxonly" value="1" style="display:none !important" tabindex="-1" autocomplete="off">
 <input name="_form_name" value="contact">
 ```
 
 That's it!
-
-
-## TODO
-I do want to support more payloads formats than just JSON. And add some layer of spam protection. But as a proof of concept I think it works pretty well.
