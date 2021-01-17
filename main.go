@@ -26,10 +26,11 @@ import (
 )
 
 type form struct {
-	name    string
-	to      string
-	from    string
-	subject string
+	name     string
+	to       string
+	from     string
+	subject  string
+	redirect string
 }
 
 type formData struct {
@@ -71,6 +72,9 @@ func respond(code int, err error, headers ...[2]string) *events.APIGatewayProxyR
 	}
 
 	for _, h := range headers {
+		if h[0] == "location" {
+			h[1] += "?error=" + err.Error()
+		}
 		response.Headers[h[0]] = h[1]
 	}
 
@@ -184,10 +188,11 @@ func getForm(name string) (form, error) {
 
 	prefix := fmt.Sprintf("FORM_%s_", strings.ToUpper(name))
 	form := form{
-		name:    name,
-		to:      os.Getenv(prefix + "TO"),
-		from:    os.Getenv(prefix + "FROM"),
-		subject: os.Getenv(prefix + "SUBJECT"),
+		name:     name,
+		to:       os.Getenv(prefix + "TO"),
+		from:     os.Getenv(prefix + "FROM"),
+		subject:  os.Getenv(prefix + "SUBJECT"),
+		redirect: os.Getenv(prefix + "REDIRECT"),
 	}
 
 	err := errors.New("could not parse form from env: missing")
@@ -274,16 +279,12 @@ func Handler(request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResp
 		return respond(http.StatusBadGateway, err), nil
 	}
 
+	statusCode := http.StatusOK
+	redirect := [2]string{"location", form.redirect}
+	if len(form.redirect) > 0 {
+		statusCode = http.StatusSeeOther
+	}
+
 	err = sendEmail(server, form, data)
-	if err != nil {
-		return respond(http.StatusInternalServerError, err), nil
-	}
-
-	redirect := [2]string{}
-	if v, ok := data.values["_redirect"]; ok {
-		redirect = [2]string{"location", v}
-		return respond(http.StatusSeeOther, nil, redirect), nil
-	}
-
-	return respond(http.StatusOK, nil, redirect), nil
+	return respond(statusCode, err, redirect), nil
 }
