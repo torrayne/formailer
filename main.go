@@ -72,13 +72,14 @@ func respond(code int, err error, headers ...[2]string) *events.APIGatewayProxyR
 	}
 
 	for _, h := range headers {
-		if h[0] == "location" {
-			h[1] += "?error=" + err.Error()
-		}
 		response.Headers[h[0]] = h[1]
 	}
 
 	if err != nil {
+		if _, ok := response.Headers["location"]; ok {
+			response.Headers["location"] += "?error=" + err.Error()
+		}
+
 		str, err := json.Marshal(map[string]string{"message": err.Error()})
 		if err != nil {
 			code = http.StatusInternalServerError
