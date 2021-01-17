@@ -2,47 +2,79 @@
 
 ![Screenshot](img.png)
 
-Netlify likes to pretend like no one uses Golang for functions. You can't even use `netlify dev` to test them. Well too bad, I like Go.
+Netlify only allows for 100 form submissions a month but also allows for 125k function calls per month. So for websites that don't need submission storage you can use Formailer to send you an email after submission.
 
-Netlify only gives you 100 free submissions per site a month. Most of the time my clients only use forms as a pseudo send email service. So why not take advantage of the 125k per site a month netlify function limit.
+## Challenges
 
-## How to use
-Other Jamstack email services ask you to provide all the to, from, and subject information on every request. Which in my opinion kind of defeats the purpose of hiding your email in the first place. So we use Netlify Environment Variables. Unfortunately [functions can't read variables in `netlify.toml`](https://github.com/netlify/netlify-lambda/issues/59) so you'll have to add them all the the UI.
+Netlify barely supports Go, you can't even use the Netlify CLI to test Go functions. Every change had to be commited and tested directly on Netlify. The bad part is I had minimal experience working with multipart forms before this project. And [Hoppscotch](https://hoppscotch.io) doesn't implement multipart forms in a traditional way which led to a bunch of false failed build and frustration.
+
+There's also an annoying bug with environment variables where [functions can't read variabes defined in the `netlify.toml`](https://github.com/netlify/netlify-lambda/issues/59). So you'll just have to add them all in the UI.
+
+## Install
+Create a `main.go` in your project root:
+```go
+package main
+
+import (
+	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/djatwood/formailer"
+)
+
+func main() {
+	lambda.Start(formailer.Handler)
+}
+```
+Update your `netlify.toml`:
+```toml
+[build]
+    build="go mod tidy && go build -o functions/formailer"
+    functions="functions" 
+[build.environment]
+    GO_IMPORT_PATH="your project git location"
+```
+Here is [another example](https://github.com/netlify/aws-lambda-go-example)
+
+## Setup
+I wanted to keep your email secure. There are several form email services that leak your email either inside hidden fields or in the form action. And while that may be okay, I really didn't want to do it that way. So you add your SMTP config to your env.
 
 ### SMTP
-We use SMTP to send the emails. You'll need to add the following vars.
 ```env
-SMTP_HOST="mail.domain.com"
-SMTP_PORT="587"
-SMTP_USER="noreply@domain.com"
-SMTP_PASS="mysupersecretpassword"
+SMTP_HOST=mail.domain.com
+SMTP_PORT=587
+SMTP_USER=noreply@domain.com
+SMTP_PASS=mysupersecretpassword
 ```
 
 ### Forms
-To support multiple forms on a single site, you have to prefix your form configs.
+Each form will need the following vars: `_TO`, `_FROM`, and `Subject`. `_REDIRECT` is the location you want the user to go to after submitting the form. This is unnecessary for forms submitted with AJAX.
 ```env
-FORM_form-name_TO=""
-FORM_form-name_FROM=""
-FORM_form-name_SUBJECT=""
+FORM_FORMNAME_TO=
+FORM_FORMNAME_FROM="Name" <email@domail.com>
+FORM_FORMNAME_SUBJECT=
+# OPTIONAL
+FORM_FORMNAME_REDIRECT=
 ```
 
 Your setup might look like this:
 ```env
-FORM_QUOTES_TO="support@domain.com"
-FORM_QUOTES_FROM="noreply@domain.com"
-FORM_QUOTES_SUBJECT="New Quote Request"
+FORM_QUOTES_TO=support@domain.com
+FORM_QUOTES_FROM="Company" <noreply@domain.com>
+FORM_QUOTES_SUBJECT=New Quote Request
+FORM_REDIRECT=/quotes/success
 
-FORM_CONTACT_TO="info@domain.com"
-FORM_CONTACT_FROM="noreply@domain.com"
-FORM_CONTACT_SUBJECT="New Contact Submission"
+FORM_CONTACT_TO=info@domain.com
+FORM_CONTACT_FROM="Company" <noreply@domain.com>
+FORM_CONTACT_SUBJECT=New Contact Submission
+FORM_REDIRECT=https://domin.com/thankyou
 ```
 
-### Submissions
-Submit your form using `application/x-www-form-urlencoded`, `multipart/form-data`, or `application/json`. Include the `_form_name` case insensitive. If `faxonly` is checked, you will get a success message but no email will be sent.
+### Submitting forms
+So that we can use the correct form config you need to add the form name as a hidden input with the name `_form_name`. You can also add a honey pot checkbox with the name `faxonly`.
+
+Formailer supports submitting forms as `application/x-www-form-urlencoded`, `multipart/form-data`, or `application/json`.
 ```html
+<input name="_form_name" value="contact">
 <!-- Honey Pot -->
 <input type="checkbox" name="faxonly" value="1" style="display:none !important" tabindex="-1" autocomplete="off">
-<input name="_form_name" value="contact">
 ```
 
-That's it!
