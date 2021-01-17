@@ -1,5 +1,7 @@
 # Formailer
+
 ![Go](https://github.com/djatwood/formailer/workflows/Go/badge.svg)
+
 ![Screenshot](img.png)
 
 Netlify only allows for 100 form submissions a month but also allows for 125k function calls per month. So for websites that don't need submission storage you can use Formailer to send you an email after submission.
