@@ -6,7 +6,7 @@ Netlify only allows for 100 form submissions a month but also allows for 125k fu
 
 ## Challenges
 
-Netlify barely supports Go, you can't even use the Netlify CLI to test Go functions. Every change had to be commited and tested directly on Netlify. The bad part is I had minimal experience working with multipart forms before this project. And [Hoppscotch](https://hoppscotch.io) doesn't implement multipart forms in a traditional way which led to a bunch of false failed build and frustration.
+Netlify barely supports Go, you can't even use the Netlify CLI to test Go functions. Every change had to be commited and tested directly on Netlify. The bad part is I had minimal experience working with multipart forms before this project. And [Hoppscotch](https://hoppscotch.io) doesn't implement multipart forms in a traditional way which led to a bunch of builds that I thought didn't work but actually did.
 
 There's also an annoying bug with environment variables where [functions can't read variabes defined in the `netlify.toml`](https://github.com/netlify/netlify-lambda/issues/59). So you'll just have to add them all in the UI.
 
@@ -46,7 +46,7 @@ SMTP_PASS=mysupersecretpassword
 ```
 
 ### Forms
-Each form will need the following vars: `_TO`, `_FROM`, and `Subject`. `_REDIRECT` is the location you want the user to go to after submitting the form. This is unnecessary for forms submitted with AJAX.
+Each form will need the following vars: `_TO`, `_FROM`, and `SUBJECT`. `_REDIRECT` is the location you want the user to go to after submitting the form. This is unnecessary for forms submitted with AJAX.
 ```env
 FORM_FORMNAME_TO=
 FORM_FORMNAME_FROM="Name" <email@domail.com>
