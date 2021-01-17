@@ -82,7 +82,7 @@ func respond(code int, err error, headers ...[2]string) *events.APIGatewayProxyR
 
 		str, err := json.Marshal(map[string]string{"message": err.Error()})
 		if err != nil {
-			code = http.StatusInternalServerError
+			response.StatusCode = http.StatusInternalServerError
 			response.Body = http.StatusText(http.StatusInternalServerError)
 		} else {
 			response.Body = string(str)
