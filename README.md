@@ -27,7 +27,7 @@ func main() {
 Update your `netlify.toml`:
 ```toml
 [build]
-    build="go mod tidy && go build -o functions/formailer"
+    build="go build -o functions/formailer"
     functions="functions" 
 [build.environment]
     GO_IMPORT_PATH="your project git location"
