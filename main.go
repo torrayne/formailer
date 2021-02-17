@@ -64,7 +64,7 @@ func setup() (*mail.SMTPServer, error) {
 	return server, nil
 }
 
-func respond(code int, err error, headers ...[2]string) *events.APIGatewayProxyResponse {
+func netlifyResponse(code int, err error, headers ...[2]string) *events.APIGatewayProxyResponse {
 	response := &events.APIGatewayProxyResponse{
 		StatusCode: code,
 		Body:       http.StatusText(code),
@@ -85,7 +85,30 @@ func respond(code int, err error, headers ...[2]string) *events.APIGatewayProxyR
 	return response
 }
 
-func parseData(contentType, body string) (*formData, error) {
+func vercelResponse(w http.ResponseWriter, code int, err error, headers ...[2]string) {
+	for _, h := range headers {
+		w.Header().Add(h[0], h[1])
+	}
+	body := http.StatusText(code)
+	if err != nil {
+		body = err.Error()
+		w.Header().Set("location", w.Header().Get("location")+"?error="+err.Error())
+	}
+
+	w.WriteHeader(code)
+	w.Write([]byte(body))
+}
+
+func readerToString(src io.Reader) (string, error) {
+	dst := new(strings.Builder)
+	if _, err := io.Copy(dst, src); err != nil {
+		return "", err
+	}
+
+	return dst.String(), nil
+}
+
+func parseData(contentType string, body string) (*formData, error) {
 	data := new(formData)
 	data.values = make(map[string]string)
 
@@ -249,36 +272,92 @@ func sendEmail(server *mail.SMTPServer, form form, data *formData) error {
 	return email.Send(client)
 }
 
-// Handler takes in a aws lambda request and sends an email
-func Handler(request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+// Netlify takes in a aws lambda request and sends an email
+func Netlify(request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	if request.HTTPMethod != "POST" {
-		return respond(http.StatusMethodNotAllowed, errors.New("only supports POST requests")), nil
+		return netlifyResponse(http.StatusMethodNotAllowed, errors.New("only supports POST requests")), nil
 	}
 
 	server, err := setup()
 	if err != nil {
-		return respond(500, nil), nil
+		return netlifyResponse(500, nil), nil
 	}
 
 	data, err := parseData(request.Headers["content-type"], request.Body)
 	if err != nil && err != io.EOF {
-		return respond(http.StatusBadRequest, err), nil
+		return netlifyResponse(http.StatusBadRequest, err), nil
 	}
 	if v := data.values["faxonly"]; v == "1" {
-		return respond(http.StatusOK, nil), nil
+		return netlifyResponse(http.StatusOK, nil), nil
 	}
 
 	form, err := getForm(data.values["_form_name"])
 	if err != nil {
-		return respond(http.StatusBadGateway, err), nil
-	}
-
-	statusCode := http.StatusOK
-	redirect := [2]string{"location", form.redirect}
-	if len(form.redirect) > 0 {
-		statusCode = http.StatusSeeOther
+		return netlifyResponse(http.StatusBadRequest, err), nil
 	}
 
 	err = sendEmail(server, form, data)
-	return respond(statusCode, err, redirect), nil
+	if err != nil {
+		return netlifyResponse(http.StatusInternalServerError, err), nil
+	}
+
+	statusCode := http.StatusOK
+	headers := [][2]string{}
+	if len(form.redirect) > 0 {
+		statusCode = http.StatusSeeOther
+		headers = append(headers, [2]string{"location", form.redirect})
+	}
+
+	return netlifyResponse(statusCode, nil, headers...), nil
+}
+
+// Vercel just needs a normal http handler
+func Vercel(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		vercelResponse(w, http.StatusMethodNotAllowed, errors.New("only supports POST requests"))
+		return
+	}
+
+	server, err := setup()
+	if err != nil {
+		vercelResponse(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	body := new(strings.Builder)
+	_, err = io.Copy(body, r.Body)
+	if err != nil {
+		vercelResponse(w, http.StatusInternalServerError, err)
+		return
+	}
+	data, err := parseData(r.Header.Get("Content-Type"), body.String())
+	if err != nil && err != io.EOF {
+		vercelResponse(w, http.StatusBadRequest, err)
+		return
+	}
+	if v := data.values["faxonly"]; v == "1" {
+		vercelResponse(w, http.StatusOK, nil)
+		return
+	}
+
+	form, err := getForm(data.values["_form_name"])
+	if err != nil {
+		vercelResponse(w, http.StatusBadRequest, err)
+		return
+	}
+
+	err = sendEmail(server, form, data)
+	if err != nil {
+		vercelResponse(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	statusCode := http.StatusOK
+	headers := [][2]string{}
+	if len(form.redirect) > 0 {
+		statusCode = http.StatusSeeOther
+		headers = append(headers, [2]string{"location", form.redirect})
+	}
+
+	vercelResponse(w, statusCode, nil, headers...)
 }

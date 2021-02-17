@@ -6,5 +6,5 @@ import (
 )
 
 func main() {
-	lambda.Start(formailer.Handler)
+	lambda.Start(formailer.Netlify)
 }
