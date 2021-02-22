@@ -92,7 +92,7 @@ So that we can use the correct form config you need to add the form name as a hi
 
 Formailer supports submitting forms as `application/x-www-form-urlencoded`, `multipart/form-data`, or `application/json`.
 ```html
-<input name="_form_name" value="contact">
+<input type="hidden" name="_form_name" value="contact">
 <!-- Honey Pot -->
 <input type="checkbox" name="faxonly" value="1" style="display:none !important" tabindex="-1" autocomplete="off">
 ```
