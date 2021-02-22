@@ -13,6 +13,7 @@ Netlify barely supports Go, you can't even use the Netlify CLI to test Go functi
 There's also an annoying bug with environment variables where [functions can't read variabes defined in the `netlify.toml`](https://github.com/netlify/netlify-lambda/issues/59). So you'll just have to add them all in the UI.
 
 ## Install
+### Netlify
 Create a `main.go` in your project root:
 ```go
 package main
@@ -23,7 +24,7 @@ import (
 )
 
 func main() {
-	lambda.Start(formailer.Handler)
+	lambda.Start(formailer.Netlify)
 }
 ```
 Update your `netlify.toml`:
@@ -35,6 +36,22 @@ Update your `netlify.toml`:
     GO_IMPORT_PATH="your project git location"
 ```
 Here is [another example](https://github.com/netlify/aws-lambda-go-example)
+
+### Vercel
+
+Create a `formailer.go` in your project at `./api/`:
+```go
+package main
+
+import (
+    "net/http"
+	"github.com/djatwood/formailer"
+)
+
+func Send(w http.ResponseWriter, r *http.Request) {
+	formailer.Vercel(w, r)
+}
+```
 
 ## Setup
 I wanted to keep your email secure. There are several form email services that leak your email either inside hidden fields or in the form action. And while that may be okay, I really didn't want to do it that way. So you add your SMTP config to your env.
