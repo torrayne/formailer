@@ -275,7 +275,7 @@ func sendEmail(server *mail.SMTPServer, form form, data *formData) error {
 // Netlify takes in a aws lambda request and sends an email
 func Netlify(request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	if request.HTTPMethod != "POST" {
-		return netlifyResponse(http.StatusMethodNotAllowed, errors.New("only supports POST requests")), nil
+		return netlifyResponse(http.StatusMethodNotAllowed, nil), nil
 	}
 
 	server, err := setup()
@@ -314,7 +314,7 @@ func Netlify(request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResp
 // Vercel just needs a normal http handler
 func Vercel(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
-		vercelResponse(w, http.StatusMethodNotAllowed, errors.New("only supports POST requests"))
+		vercelResponse(w, http.StatusMethodNotAllowed, nil)
 		return
 	}
 
