@@ -10,9 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"mime/multipart"
-	"net/http"
 	"net/url"
 	"os"
 	"strconv"
@@ -20,129 +18,134 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/aws/aws-lambda-go/events"
 	"github.com/aymerick/douceur/inliner"
 	mail "github.com/xhit/go-simple-mail/v2"
 )
 
-type form struct {
-	name     string
-	to       string
-	from     string
-	subject  string
-	redirect string
+// Config is a map of form configs
+type Config map[string]*Form
+
+// Form contains all the setting to send an email
+type Form struct {
+	Name     string
+	To       string
+	From     string
+	Subject  string
+	Redirect string
+	Template string
 }
 
-type formData struct {
-	values      map[string]string
-	attachments []attachment
+// Submission is parsed from the body
+type Submission struct {
+	Form        *Form
+	Values      map[string]string
+	Attachments []Attachment
 }
 
-type attachment struct {
-	filename string
-	mimeType string
-	data     []byte
+// Attachment is an array of files to be attached to the email
+type Attachment struct {
+	Filename string
+	MimeType string
+	Data     []byte
 }
 
-func setup() (*mail.SMTPServer, error) {
-	port, err := strconv.Atoi(os.Getenv("SMTP_PORT"))
-	if err != nil {
-		return nil, errors.New("could not parse SMTP_PORT")
-	}
-
-	server := mail.NewSMTPClient()
-	server.Host = os.Getenv("SMTP_HOST")
-	server.Port = port
-	server.Username = os.Getenv("SMTP_USER")
-	server.Password = os.Getenv("SMTP_PASS")
-	server.Encryption = mail.EncryptionTLS
-	server.Authentication = mail.AuthLogin
-	server.KeepAlive = false
-	server.ConnectTimeout = 10 * time.Second
-	server.SendTimeout = 10 * time.Second
-
-	return server, nil
+type smtpAuth struct {
+	host, port, user, pass string
 }
 
-func netlifyResponse(code int, err error, headers ...[2]string) *events.APIGatewayProxyResponse {
-	response := &events.APIGatewayProxyResponse{
-		StatusCode: code,
-		Body:       http.StatusText(code),
-		Headers:    make(map[string]string),
+// Set is a case insentive way to set form configs
+func (c *Config) Set(forms ...*Form) {
+	for _, form := range forms {
+		(*c)[strings.ToLower(form.Name)] = form
 	}
-
-	for _, h := range headers {
-		response.Headers[h[0]] = h[1]
-	}
-
-	if err != nil {
-		response.Body = err.Error()
-		if _, ok := response.Headers["location"]; ok {
-			response.Headers["location"] += "?error=" + err.Error()
-		}
-	}
-
-	return response
 }
 
-func vercelResponse(w http.ResponseWriter, code int, err error, headers ...[2]string) {
-	for _, h := range headers {
-		w.Header().Add(h[0], h[1])
-	}
-	body := http.StatusText(code)
-	if err != nil {
-		body = err.Error()
-		w.Header().Set("location", w.Header().Get("location")+"?error="+err.Error())
-	}
-
-	w.WriteHeader(code)
-	w.Write([]byte(body))
+// Get is a case insentive way to get form configs
+func (c *Config) Get(name string) *Form {
+	return (*c)[strings.ToLower(name)]
 }
 
-func readerToString(src io.Reader) (string, error) {
-	dst := new(strings.Builder)
-	if _, err := io.Copy(dst, src); err != nil {
-		return "", err
-	}
-
-	return dst.String(), nil
-}
-
-func parseData(contentType string, body string) (*formData, error) {
-	data := new(formData)
-	data.values = make(map[string]string)
+// Parse parses the body string based on the provided content type
+func (c *Config) Parse(contentType string, body string) (*Submission, error) {
+	submission := new(Submission)
+	submission.Values = make(map[string]string)
 
 	var err error
 	if strings.Contains(contentType, "application/json") {
-		err = data.parseJSON(body)
+		err = submission.parseJSON(body)
 	} else if strings.Contains(contentType, "application/x-www-form-urlencoded") {
-		err = data.parseURLEncoded(body)
+		err = submission.parseURLEncoded(body)
 	} else if strings.Contains(contentType, "multipart/form-data") {
-		err = data.parseMultipartForm(contentType, body)
+		err = submission.parseMultipartForm(contentType, body)
 	} else {
 		err = errors.New("invalid content type")
 	}
 
-	return data, err
+	submission.Form = c.Get(submission.Values["_form_name"])
+
+	return submission, err
 }
 
-func (data *formData) parseJSON(body string) error {
-	return json.Unmarshal([]byte(body), &data.values)
+// GetTemplate allows for fallback on the default template when no template has beeen provided
+func (f *Form) GetTemplate() string {
+	if len(f.Template) < 1 {
+		return defaultTemplate
+	}
+	return f.Template
 }
 
-func (data *formData) parseURLEncoded(body string) error {
+// SMTPServer returns a sever using the ENV for auth falling back on the default for each missing param
+func (f *Form) SMTPServer() (*mail.SMTPServer, error) {
+	prefix := fmt.Sprintf("SMTP_%s_", strings.ToUpper(f.Name))
+
+	def := defaultSMTP()
+	host := or(os.Getenv(prefix+"HOST"), def.host)
+	port := or(os.Getenv(prefix+"PORT"), def.port)
+	user := or(os.Getenv(prefix+"USER"), def.user)
+	pass := or(os.Getenv(prefix+"PASS"), def.pass)
+
+	if len(host) < 1 || len(port) < 1 || len(user) < 1 || len(pass) < 1 {
+		return nil, fmt.Errorf("form %s missing SMTP configuration ", f.Name)
+	}
+
+	{
+		port, err := strconv.Atoi(port)
+		if err != nil {
+			return nil, err
+		}
+
+		server := mail.NewSMTPClient()
+		server.Host = host
+		server.Port = port
+		server.Username = user
+		server.Password = pass
+		server.Encryption = mail.EncryptionTLS
+		server.Authentication = mail.AuthLogin
+		server.KeepAlive = false
+		server.ConnectTimeout = 10 * time.Second
+		server.SendTimeout = 10 * time.Second
+
+		return server, nil
+	}
+}
+
+func (s *Submission) parseJSON(body string) error {
+	return json.Unmarshal([]byte(body), &s.Values)
+}
+
+func (s *Submission) parseURLEncoded(body string) error {
 	vals, err := url.ParseQuery(body)
 	if err != nil {
 		return err
 	}
 
 	for k := range vals {
-		data.values[k] = vals.Get(k)
+		s.Values[k] = vals.Get(k)
 	}
 	return nil
 }
 
-func (data *formData) parseMultipartForm(contentType, body string) error {
+func (s *Submission) parseMultipartForm(contentType, body string) error {
 	header := strings.Split(contentType, ";")
 	var boundary string
 	for _, h := range header {
@@ -171,69 +174,27 @@ func (data *formData) parseMultipartForm(contentType, body string) error {
 
 		filename := part.FileName()
 		if len(filename) > 0 {
-			attachment := attachment{
-				filename: part.FileName(),
-				mimeType: part.Header.Get("Content-Type"),
-				data:     value.Bytes(),
+			attachment := Attachment{
+				Filename: part.FileName(),
+				MimeType: part.Header.Get("Content-Type"),
+				Data:     value.Bytes(),
 			}
-			data.attachments = append(data.attachments, attachment)
-			data.values[part.FormName()] = part.FileName()
+			s.Attachments = append(s.Attachments, attachment)
+			s.Values[part.FormName()] = part.FileName()
 		} else {
-			data.values[part.FormName()] = value.String()
+			s.Values[part.FormName()] = value.String()
 		}
 	}
 }
 
-func (data *formData) format(form form) string {
-	message := fmt.Sprintf("<h1>New %s Submission</h1>", strings.Title(form.name))
-
-	message += "<table><tbody>"
-	for k, v := range data.values {
-		if k[0] != '_' {
-			message += fmt.Sprintf("<tr><th>%s</th><td>%s</td></tr>", k, v)
-		}
-	}
-	message += "</tbody></table>"
-
-	return message
-}
-
-func getForm(name string) (form, error) {
-	if name == "" {
-		return form{}, errors.New("_form_name missing from input")
-	}
-
-	prefix := fmt.Sprintf("FORM_%s_", strings.ToUpper(name))
-	form := form{
-		name:     name,
-		to:       os.Getenv(prefix + "TO"),
-		from:     os.Getenv(prefix + "FROM"),
-		subject:  os.Getenv(prefix + "SUBJECT"),
-		redirect: os.Getenv(prefix + "REDIRECT"),
-	}
-
-	err := errors.New("could not parse form from env: missing")
-	if form.to == "" {
-		return form, fmt.Errorf("%w to", err)
-	}
-	if form.from == "" {
-		return form, fmt.Errorf("%w from", err)
-	}
-	if form.subject == "" {
-		return form, fmt.Errorf("%w subject", err)
-	}
-
-	return form, nil
-}
-
-func generateMessage(form form, message string) (string, error) {
-	t, err := template.New("email").Parse(emailTemplate)
+func (s *Submission) generate() (string, error) {
+	t, err := template.New("email").Parse(s.Form.GetTemplate())
 	if err != nil {
 		return "", err
 	}
 
 	var email bytes.Buffer
-	err = t.Execute(&email, message)
+	err = t.Execute(&email, s)
 	if err != nil {
 		return "", err
 	}
@@ -241,9 +202,9 @@ func generateMessage(form form, message string) (string, error) {
 	return inliner.Inline(email.String())
 }
 
-func sendEmail(server *mail.SMTPServer, form form, data *formData) error {
-	message := data.format(form)
-	message, err := generateMessage(form, message)
+// Send sends the email
+func (s *Submission) Send(server *mail.SMTPServer) error {
+	message, err := s.generate()
 	if err != nil {
 		return err
 	}
@@ -254,14 +215,14 @@ func sendEmail(server *mail.SMTPServer, form form, data *formData) error {
 	}
 
 	email := mail.NewMSG()
-	email.AddTo(form.to)
-	email.SetFrom(form.from)
-	email.SetSubject(form.subject)
+	email.AddTo(s.Form.To)
+	email.SetFrom(s.Form.From)
+	email.SetSubject(s.Form.Subject)
 	email.SetBody(mail.TextHTML, message)
 	email.AddHeader("Message-Id", base32.StdEncoding.EncodeToString(token))
 
-	for _, attachment := range data.attachments {
-		email.AddAttachmentData(attachment.data, attachment.filename, attachment.mimeType)
+	for _, attachment := range s.Attachments {
+		email.AddAttachmentData(attachment.Data, attachment.Filename, attachment.MimeType)
 	}
 
 	client, err := server.Connect()
@@ -272,92 +233,18 @@ func sendEmail(server *mail.SMTPServer, form form, data *formData) error {
 	return email.Send(client)
 }
 
-// Netlify takes in a aws lambda request and sends an email
-func Netlify(request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
-	if request.HTTPMethod != "POST" {
-		return netlifyResponse(http.StatusMethodNotAllowed, nil), nil
+func defaultSMTP() smtpAuth {
+	return smtpAuth{
+		host: os.Getenv("SMTP_HOST"),
+		port: os.Getenv("SMTP_PORT"),
+		user: os.Getenv("SMTP_USER"),
+		pass: os.Getenv("SMTP_PASS"),
 	}
-
-	server, err := setup()
-	if err != nil {
-		return netlifyResponse(500, nil), nil
-	}
-
-	data, err := parseData(request.Headers["content-type"], request.Body)
-	if err != nil && err != io.EOF {
-		return netlifyResponse(http.StatusBadRequest, err), nil
-	}
-	if v := data.values["faxonly"]; v == "1" {
-		return netlifyResponse(http.StatusOK, nil), nil
-	}
-
-	form, err := getForm(data.values["_form_name"])
-	if err != nil {
-		return netlifyResponse(http.StatusBadRequest, err), nil
-	}
-
-	err = sendEmail(server, form, data)
-	if err != nil {
-		return netlifyResponse(http.StatusInternalServerError, err), nil
-	}
-
-	statusCode := http.StatusOK
-	headers := [][2]string{}
-	if len(form.redirect) > 0 {
-		statusCode = http.StatusSeeOther
-		headers = append(headers, [2]string{"location", form.redirect})
-	}
-
-	return netlifyResponse(statusCode, nil, headers...), nil
 }
 
-// Vercel just needs a normal http handler
-func Vercel(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		vercelResponse(w, http.StatusMethodNotAllowed, nil)
-		return
+func or(a, b string) string {
+	if len(a) < 1 {
+		return b
 	}
-
-	server, err := setup()
-	if err != nil {
-		vercelResponse(w, http.StatusInternalServerError, err)
-		return
-	}
-
-	body := new(strings.Builder)
-	_, err = io.Copy(body, r.Body)
-	if err != nil {
-		vercelResponse(w, http.StatusInternalServerError, err)
-		return
-	}
-	data, err := parseData(r.Header.Get("Content-Type"), body.String())
-	if err != nil && err != io.EOF {
-		vercelResponse(w, http.StatusBadRequest, err)
-		return
-	}
-	if v := data.values["faxonly"]; v == "1" {
-		vercelResponse(w, http.StatusOK, nil)
-		return
-	}
-
-	form, err := getForm(data.values["_form_name"])
-	if err != nil {
-		vercelResponse(w, http.StatusBadRequest, err)
-		return
-	}
-
-	err = sendEmail(server, form, data)
-	if err != nil {
-		vercelResponse(w, http.StatusInternalServerError, err)
-		return
-	}
-
-	statusCode := http.StatusOK
-	headers := [][2]string{}
-	if len(form.redirect) > 0 {
-		statusCode = http.StatusSeeOther
-		headers = append(headers, [2]string{"location", form.redirect})
-	}
-
-	vercelResponse(w, statusCode, nil, headers...)
+	return a
 }

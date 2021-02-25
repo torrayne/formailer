@@ -1,6 +1,7 @@
 package formailer
 
-const emailTemplate = `<html lang="en">
+const defaultTemplate = `<html lang="en">
+
 <head>
     <style>
         body {
@@ -54,8 +55,22 @@ const emailTemplate = `<html lang="en">
         }
     </style>
 </head>
+
 <body>
-    <div id="wrapper" class="content">{{ . }}</div>
+    <div id="wrapper" class="content">
+        <h1>New {{.Form.Name}} Submission</h1>
+        <table>
+            <tbody>
+                {{- range $name, $value := .Values -}}
+                <tr>
+                    <th>{{$name}}</th>
+                    <td>{{$value}}</td>
+                </tr>
+                {{- end -}}
+            </tbody>
+        </table>
+    </div>
     <p class="content"><a class="attribute" href="https://atwood.io">Powered by Formailer © Atwood.io</a></p>
 </body>
+
 </html>`
