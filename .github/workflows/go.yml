@@ -21,7 +21,7 @@ jobs:
     - name: Test
       run: go test -v
       
-    - name: Build
-      run: go test &&
-            go build -v ./examples/netlify/main.go && 
-            go build -v ./examples/vercel/main.go
+    - name: Build Netlify
+      run: go build -v ./examples/netlify/main.go
+    - name: Build Vercel
+      run: go build -v ./examples/vercel/main.go
