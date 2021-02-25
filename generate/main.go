@@ -14,7 +14,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	out.Write([]byte("package formailer\n\nconst emailTemplate = `"))
+	out.Write([]byte("package formailer\n\nconst defaultTemplate = `"))
 	io.Copy(out, template)
 	out.Write([]byte("`\n"))
 }

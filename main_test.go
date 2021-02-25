@@ -6,40 +6,28 @@ import (
 	"testing"
 )
 
-func testsetup() {
-	os.Setenv("FORM_CONTACT_TO", "djatwood01@gmail.com")
-	os.Setenv("FORM_CONTACT_FROM", "daniel@atwood.io")
-	os.Setenv("FORM_CONTACT_SUBJECT", "New Contact Form Submission")
-}
-
-func shutdown() {
-	os.Clearenv()
-}
-
-func TestMain(m *testing.M) {
-	testsetup()
-	code := m.Run()
-	os.Exit(code)
-}
-
-func TestGetForm(t *testing.T) {
-	contact := form{
-		name:    "contact",
-		to:      "djatwood01@gmail.com",
-		from:    "daniel@atwood.io",
-		subject: "New Contact Form Submission",
+func TestSetAndGet(t *testing.T) {
+	contact := Form{
+		Name:    "contact",
+		To:      "djatwood01@gmail.com",
+		From:    "daniel@atwood.io",
+		Subject: "New Contact Form Submission",
 	}
 
-	res, err := getForm(contact.name)
-	if err != nil {
-		t.Errorf("Error getting form: %w", err)
+	cfg := make(Config)
+	cfg.Set(&contact)
+
+	res := cfg.Get(contact.Name)
+	if res == nil {
+		t.Errorf("Could not get config for form: %s", contact.Name)
 	}
-	if contact != res {
-		t.Error("Unexpected result reading form from env")
+	if &contact != res {
+		t.Error("Unexpected result getting form from config")
 	}
 }
 
-func TestParseData(t *testing.T) {
+func TestParse(t *testing.T) {
+	cfg := make(Config)
 	tests := map[string]string{
 		"application/json":                  `{"Name":"Daniel", "message": "This is my message"}`,
 		"application/x-www-form-urlencoded": "name=Daniel&message=This is my message",
@@ -47,37 +35,63 @@ func TestParseData(t *testing.T) {
 	}
 
 	for contentType, body := range tests {
-		_, err := parseData(contentType, body)
+		_, err := cfg.Parse(contentType, body)
 		if err != nil && err != io.EOF {
 			t.Errorf("Failed to parse data: %v", err)
 		}
 	}
 }
 
-func TestFormatData(t *testing.T) {
-	form := form{
-		name:    "contact",
-		subject: "New Contact Form Submission",
+func TestGetTemplate(t *testing.T) {
+	tests := []map[string]interface{}{
+		{
+			"form":     &Form{Name: "testing"},
+			"expected": defaultTemplate,
+		},
+		{
+			"form":     &Form{Name: "testing", Template: "THIS IS MY TEMPLATE"},
+			"expected": "THIS IS MY TEMPLATE",
+		},
 	}
 
-	expected := "<h1>New Contact Submission</h1><table><tbody><tr><th>Name</th><td>Daniel</td></tr></tbody></table>"
-
-	data := formData{values: map[string]string{"Name": "Daniel"}}
-	output := data.format(form)
-
-	if output != expected {
-		t.Error("Failed to format data")
+	for _, test := range tests {
+		if test["expected"] != test["form"].(*Form).GetTemplate() {
+			t.Errorf("Unexpected result from Form.GetTemplate")
+		}
 	}
 }
 
-func TestGenerateMessage(t *testing.T) {
-	form := form{
-		name:    "contact",
-		subject: "New Contact Form Submission",
+func TestGenerate(t *testing.T) {
+	form := Form{
+		Name:    "Contact",
+		Subject: "New Contact Form Submission",
 	}
-	message := "<h1>New Contact Submission</h1><table><tbody><tr><th>Name</th><td>Daniel</td></tr><tr><th>Message</th><td>Hello, World!</td></tr></tbody></table>"
 
-	_, err := generateMessage(form, message)
+	cfg := make(Config)
+	cfg.Set(&form)
+
+	submission := Submission{
+		Form: &form,
+		Values: map[string]string{
+			"Name":    "Daniel",
+			"Message": "Hello, World!",
+		},
+	}
+
+	_, err := submission.generate()
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestSMTPSetup(t *testing.T) {
+	os.Setenv("SMTP_HOST", "mail.example.com")
+	os.Setenv("SMTP_PORT", "587")
+	os.Setenv("SMTP_CONTACT_USER", "username@example.com")
+	os.Setenv("SMTP_CONTACT_PASS", "mysupersecretpassword")
+
+	f := Form{Name: "Contact"}
+	_, err := f.SMTPServer()
 	if err != nil {
 		t.Error(err)
 	}
