@@ -22,9 +22,6 @@ jobs:
       run: go test -v
       
     - name: Build
-      run: go build -v ./example/main.go
-
-    - uses: actions/upload-artifact@v2
-      with:
-        name: formailer
-        path: main
+      run: go test &&
+            go build -v ./examples/netlify/main.go && 
+            go build -v ./examples/vercel/main.go
