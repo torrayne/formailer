@@ -1,7 +1,5 @@
 package formailer
 
-//go:generate go run generate/main.go
-
 import (
 	"bytes"
 	"crypto/rand"
@@ -17,6 +15,9 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	// embed is used to emed the default template
+	_ "embed"
 
 	"github.com/aymerick/douceur/inliner"
 	mail "github.com/xhit/go-simple-mail/v2"
@@ -52,6 +53,9 @@ type Attachment struct {
 type smtpAuth struct {
 	host, port, user, pass string
 }
+
+//go:embed template.html
+var defaultTemplate string
 
 // Set is a case insentive way to set form configs
 func (c *Config) Set(forms ...*Form) {
