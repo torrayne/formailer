@@ -73,8 +73,9 @@ func TestGenerate(t *testing.T) {
 	submission := Submission{
 		Form: &form,
 		Values: map[string]string{
-			"Name":    "Daniel",
-			"Message": "Hello, World!",
+			"Name":       "Daniel",
+			"Message":    "Hello, World!",
+			"_form_name": "contact",
 		},
 	}
 

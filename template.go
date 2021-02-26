@@ -62,10 +62,12 @@ const defaultTemplate = `<html lang="en">
         <table>
             <tbody>
                 {{- range $name, $value := .Values -}}
+                {{- if ne (slice $name 0 1) "_" -}}
                 <tr>
                     <th>{{$name}}</th>
                     <td>{{$value}}</td>
                 </tr>
+                {{- end -}}
                 {{- end -}}
             </tbody>
         </table>
