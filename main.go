@@ -39,7 +39,7 @@ type Form struct {
 // Submission is parsed from the body
 type Submission struct {
 	Form        *Form
-	Values      url.Values
+	Values      map[string]string
 	Attachments []Attachment
 }
 
@@ -72,7 +72,7 @@ func (c *Config) Get(name string) *Form {
 // Parse parses the body string based on the provided content type
 func (c *Config) Parse(contentType string, body string) (*Submission, error) {
 	submission := new(Submission)
-	submission.Values = make(url.Values)
+	submission.Values = make(map[string]string)
 
 	var err error
 	if strings.Contains(contentType, "application/json") {
@@ -85,7 +85,7 @@ func (c *Config) Parse(contentType string, body string) (*Submission, error) {
 		err = errors.New("invalid content type")
 	}
 
-	submission.Form = c.Get(submission.Values.Get("_form_name"))
+	submission.Form = c.Get(submission.Values["_form_name"])
 
 	return submission, err
 }
@@ -143,7 +143,9 @@ func (s *Submission) parseURLEncoded(body string) error {
 		return err
 	}
 
-	s.Values = vals
+	for k := range vals {
+		s.Values[k] = vals.Get(k)
+	}
 	return nil
 }
 
@@ -182,9 +184,9 @@ func (s *Submission) parseMultipartForm(contentType, body string) error {
 				Data:     value.Bytes(),
 			}
 			s.Attachments = append(s.Attachments, attachment)
-			s.Values.Add(part.FormName(), part.FileName())
+			s.Values[part.FormName()] = part.FileName()
 		} else {
-			s.Values.Add(part.FormName(), value.String())
+			s.Values[part.FormName()] = value.String()
 		}
 	}
 }

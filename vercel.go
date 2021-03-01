@@ -36,7 +36,7 @@ func (c *Config) Vercel(w http.ResponseWriter, r *http.Request) {
 		vercelResponse(w, http.StatusBadRequest, err)
 		return
 	}
-	if v := submission.Values.Get("faxonly"); v == "1" {
+	if v := submission.Values["faxonly"]; v == "1" {
 		vercelResponse(w, http.StatusOK, nil)
 		return
 	}

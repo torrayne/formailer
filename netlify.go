@@ -38,7 +38,7 @@ func (c *Config) Netlify(request events.APIGatewayProxyRequest) (*events.APIGate
 	if err != nil && err != io.EOF {
 		return netlifyResponse(http.StatusBadRequest, err), nil
 	}
-	if v := submission.Values.Get("faxonly"); v == "1" {
+	if v := submission.Values["faxonly"]; v == "1" {
 		return netlifyResponse(http.StatusOK, nil), nil
 	}
 
