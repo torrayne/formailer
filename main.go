@@ -11,6 +11,7 @@ import (
 	"mime/multipart"
 	"net/url"
 	"os"
+	"reflect"
 	"strconv"
 	"strings"
 	"text/template"
@@ -39,7 +40,7 @@ type Form struct {
 // Submission is parsed from the body
 type Submission struct {
 	Form        *Form
-	Values      map[string]string
+	Values      map[string]interface{}
 	Attachments []Attachment
 }
 
@@ -72,7 +73,7 @@ func (c *Config) Get(name string) *Form {
 // Parse parses the body string based on the provided content type
 func (c *Config) Parse(contentType string, body string) (*Submission, error) {
 	submission := new(Submission)
-	submission.Values = make(map[string]string)
+	submission.Values = make(map[string]interface{})
 
 	var err error
 	if strings.Contains(contentType, "application/json") {
@@ -85,8 +86,12 @@ func (c *Config) Parse(contentType string, body string) (*Submission, error) {
 		err = errors.New("invalid content type")
 	}
 
-	submission.Form = c.Get(submission.Values["_form_name"])
+	formName, ok := submission.Values["_form_name"].(string)
+	if !ok {
+		return nil, fmt.Errorf("field _form_name not of type string or not set")
+	}
 
+	submission.Form = c.Get(formName)
 	return submission, err
 }
 
@@ -144,7 +149,11 @@ func (s *Submission) parseURLEncoded(body string) error {
 	}
 
 	for k := range vals {
-		s.Values[k] = vals.Get(k)
+		if k == "_form_name" {
+			s.Values[k] = vals.Get(k)
+		} else {
+			s.Values[k] = vals[k]
+		}
 	}
 	return nil
 }
@@ -162,7 +171,7 @@ func (s *Submission) parseMultipartForm(contentType, body string) error {
 
 	decodedBody, err := base64.StdEncoding.DecodeString(body)
 	if err != nil {
-		return err
+		decodedBody = []byte(body)
 	}
 	decodedBody = append(decodedBody, '\n')
 
@@ -192,7 +201,8 @@ func (s *Submission) parseMultipartForm(contentType, body string) error {
 }
 
 func (s *Submission) generate() (string, error) {
-	t, err := template.New("email").Parse(s.Form.GetTemplate())
+	t := template.New("email").Funcs(template.FuncMap{"isSlice": isSlice})
+	_, err := t.Parse(s.Form.GetTemplate())
 	if err != nil {
 		return "", err
 	}
@@ -251,4 +261,8 @@ func or(a, b string) string {
 		return b
 	}
 	return a
+}
+
+func isSlice(v interface{}) bool {
+	return "slice" == reflect.TypeOf(v).Kind().String()
 }

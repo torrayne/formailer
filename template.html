@@ -63,7 +63,15 @@
                 {{- if ne (slice $name 0 1) "_" -}}
                 <tr>
                     <th>{{$name}}</th>
-                    <td>{{$value}}</td>
+                    <td>
+                        {{- if (isSlice $value) -}}
+                        {{- range $i, $v := $value -}}
+                        <p>{{$v}}</p>
+                        {{- end -}}
+                        {{- else -}}
+                        <p>{{$value}}</p>
+                        {{- end -}}
+                    </td>
                 </tr>
                 {{- end -}}
                 {{- end -}}

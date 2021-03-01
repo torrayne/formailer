@@ -1,7 +1,9 @@
 package formailer
 
 import (
+	"bytes"
 	"io"
+	"mime/multipart"
 	"os"
 	"testing"
 )
@@ -27,13 +29,21 @@ func TestSetAndGet(t *testing.T) {
 }
 
 func TestParse(t *testing.T) {
-	cfg := make(Config)
+	b := bytes.NewBuffer([]byte{})
+	w := multipart.NewWriter(b)
+	w.SetBoundary("--myspecificboundary")
+	w.WriteField("_form_name", "contact")
+	w.WriteField("Name", "Daniel")
+	w.WriteField("message", "This is my message")
+	w.Close()
+
 	tests := map[string]string{
-		"application/json":                  `{"Name":"Daniel", "message": "This is my message"}`,
-		"application/x-www-form-urlencoded": "name=Daniel&message=This is my message",
-		"multipart/form-data  boundary=---------------------------382742568133097519731421599912": "LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0zODI3NDI1NjgxMzMwOTc1MTk3MzE0MjE1OTk5MTINCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsgbmFtZT0iTmFtZSINCg0KRGFuaWVsDQotLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLTM4Mjc0MjU2ODEzMzA5NzUxOTczMTQyMTU5OTkxMg0KQ29udGVudC1EaXNwb3NpdGlvbjogZm9ybS1kYXRhOyBuYW1lPSJTdWJqZWN0Ig0KDQpRdW90ZSByZXF1ZXN0DQotLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLTM4Mjc0MjU2ODEzMzA5NzUxOTczMTQyMTU5OTkxMg0KQ29udGVudC1EaXNwb3NpdGlvbjogZm9ybS1kYXRhOyBuYW1lPSJNZXNzYWdlIg0KDQpUaGlzIGlzIG15IG1lc3NhZ2UNCi0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tMzgyNzQyNTY4MTMzMDk3NTE5NzMxNDIxNTk5OTEyDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9IlBob3RvIjsgZmlsZW5hbWU9IkZGNEQwMC0wLjgucG5nIg0KQ29udGVudC1UeXBlOiBpbWFnZS9wbmcNCg0KiVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAAAl21bKAAAAA1BMVEX/TQBcNTh/AAAAAXRSTlPM0jRW/QAAAApJREFUeJxjYgAAAAYAAzY3fKgAAAAASUVORK5CYIINCi0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tMzgyNzQyNTY4MTMzMDk3NTE5NzMxNDIxNTk5OTEyLS0N",
+		"application/json":                                   `{"_form_name": "contact", "Name":"Daniel", "message": "This is my message"}`,
+		"application/x-www-form-urlencoded":                  "_form_name=contact&name=Daniel&message=This is my message",
+		"multipart/form-data  boundary=--myspecificboundary": b.String(),
 	}
 
+	cfg := make(Config)
 	for contentType, body := range tests {
 		_, err := cfg.Parse(contentType, body)
 		if err != nil && err != io.EOF {
@@ -72,8 +82,8 @@ func TestGenerate(t *testing.T) {
 
 	submission := Submission{
 		Form: &form,
-		Values: map[string]string{
-			"Name":       "Daniel",
+		Values: map[string]interface{}{
+			"Name":       []string{"Daniel", "Atwood"},
 			"Message":    "Hello, World!",
 			"_form_name": "contact",
 		},
