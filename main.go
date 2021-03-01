@@ -1,7 +1,6 @@
 package formailer
 
 import (
-	"os"
 	"reflect"
 	"text/template"
 
@@ -14,15 +13,6 @@ var defaultTemplate string
 
 var templateFuncMap = template.FuncMap{
 	"isSlice": isSlice,
-}
-
-func defaultSMTP() smtpAuth {
-	return smtpAuth{
-		host: os.Getenv("SMTP_HOST"),
-		port: os.Getenv("SMTP_PORT"),
-		user: os.Getenv("SMTP_USER"),
-		pass: os.Getenv("SMTP_PASS"),
-	}
 }
 
 func or(a, b string) string {

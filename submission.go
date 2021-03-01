@@ -30,10 +30,6 @@ type Attachment struct {
 	Data     []byte
 }
 
-type smtpAuth struct {
-	host, port, user, pass string
-}
-
 func (s *Submission) parseJSON(body string) error {
 	return json.Unmarshal([]byte(body), &s.Values)
 }
