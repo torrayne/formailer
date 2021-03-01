@@ -17,7 +17,7 @@
             width: 100%;
             max-width: 800px;
             margin: 0;
-            box-sizing: border-box;
+
         }
 
         h1 {
@@ -55,28 +55,30 @@
 </head>
 
 <body>
-    <div id="wrapper" class="content">
-        <h1>New {{.Form.Name}} Submission</h1>
-        <table>
-            <tbody>
-                {{- range $name, $value := .Values -}}
-                {{- if ne (slice $name 0 1) "_" -}}
-                <tr>
-                    <th>{{$name}}</th>
-                    <td>
-                        {{- if (isSlice $value) -}}
-                        {{- range $i, $v := $value -}}
-                        <p>{{$v}}</p>
-                        {{- end -}}
-                        {{- else -}}
-                        <p>{{$value}}</p>
-                        {{- end -}}
-                    </td>
-                </tr>
-                {{- end -}}
-                {{- end -}}
-            </tbody>
-        </table>
+    <div id="wrapper">
+        <div class="content">
+            <h1>New {{.Form.Name}} Submission</h1>
+            <table>
+                <tbody>
+                    {{- range $name, $value := .Values -}}
+                    {{- if ne (slice $name 0 1) "_" -}}
+                    <tr>
+                        <th>{{$name}}</th>
+                        <td>
+                            {{- if (isSlice $value) -}}
+                            {{- range $i, $v := $value -}}
+                            <p>{{$v}}</p>
+                            {{- end -}}
+                            {{- else -}}
+                            <p>{{$value}}</p>
+                            {{- end -}}
+                        </td>
+                    </tr>
+                    {{- end -}}
+                    {{- end -}}
+                </tbody>
+            </table>
+        </div>
     </div>
     <p class="content"><a class="attribute" href="https://atwood.io">Powered by Formailer © Atwood.io</a></p>
 </body>
