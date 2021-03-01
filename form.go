@@ -60,3 +60,10 @@ func (f *Form) SMTPServer() (*mail.SMTPServer, error) {
 		return server, nil
 	}
 }
+
+func or(a, b string) string {
+	if len(a) < 1 {
+		return b
+	}
+	return a
+}
