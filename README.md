@@ -4,7 +4,7 @@
 
 ![Screenshot](img.png)
 
-If you need your contact form to send you an email but don't need to store form submissions, then Formaier is the serverless library for you!
+If you need your contact form to send you an email but don't need to store form submissions, then Formailer is the serverless library for you!
 
 ## Quickstart
 
@@ -156,4 +156,4 @@ Netlify barely supports Go, you can't even use the Netlify CLI to test Go functi
 
 There's also an annoying bug with environment variables where [functions can't read variabes defined in the `netlify.toml`](https://github.com/netlify/netlify-lambda/issues/59). So you'll just have to add them all in the UI.
 
-Later I switched to Vercel which was a hugo breath of fresh air. Because you can test Go functions locally. Even though they say Go support is still in alpha.
+Later I switched to Vercel which was a huge breath of fresh air. Because you can test Go functions locally. Even though they say Go support is still in alpha.
