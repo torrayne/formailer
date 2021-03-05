@@ -34,13 +34,11 @@ lambda.Start(handlers.Netlify(&cfg))
 ```
 If you want to use your own handler that's not a problem either. [View an example handler](#user-content-custom-handlers).
 
-Last you update your form. So that we can use the correct form config you need to add the form name as a hidden input with the name `_form_name`. You can also add a honey pot checkbox with the name `faxonly`. This will return a `200 OK` if filled out but will not send an email when using a built-in handler.
+Last you update your form. So that we can use the correct form config you need to add the form name as a hidden input with the name `_form_name`.
 
 Formailer supports submitting forms as `application/x-www-form-urlencoded`, `multipart/form-data`, or `application/json`.
 ```html
 <input type="hidden" name="_form_name" value="contact">
-<!-- Honey Pot -->
-<input type="checkbox" name="faxonly" value="1" style="display:none !important" tabindex="-1" autocomplete="off">
 ```
 ```json
 {
