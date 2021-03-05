@@ -1,15 +1,11 @@
 package formailer
 
+//go:generate go run generate/main.go
+
 import (
 	"reflect"
 	"text/template"
-
-	// embed is used to emed the default template
-	_ "embed"
 )
-
-//go:embed template.html
-var defaultTemplate string
 
 var templateFuncMap = template.FuncMap{
 	"isSlice": isSlice,
