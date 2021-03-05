@@ -41,9 +41,10 @@ func (s *Submission) parseURLEncoded(body string) error {
 	}
 
 	for k := range vals {
-		if k == "_form_name" {
+		switch k {
+		case "_form_name", "g-recaptcha-response":
 			s.Values[k] = vals.Get(k)
-		} else {
+		default:
 			s.Values[k] = vals[k]
 		}
 	}

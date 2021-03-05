@@ -7,6 +7,7 @@ package main
 import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/djatwood/formailer"
+    "github.com/djatwood/formailer/handlers"
 )
 
 func main() {
@@ -17,7 +18,7 @@ func main() {
 	    Subject:  "New Submission",
 	    Redirect: "/success",
     })
-	lambda.Start(cfg.Netlify)
+	lambda.Start(handlers.Netlify(&cfg))
 }
 ```
 2. Update your `netlify.toml`:

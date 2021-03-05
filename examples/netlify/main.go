@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/djatwood/formailer"
+	"github.com/djatwood/formailer/handlers"
 )
 
 func main() {
@@ -22,5 +23,5 @@ func main() {
 		},
 	)
 
-	lambda.Start(cfg.Netlify)
+	lambda.Start(handlers.Netlify(&cfg))
 }

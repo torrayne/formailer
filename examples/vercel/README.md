@@ -8,6 +8,7 @@ package main
 import (
     "net/http"
 	"github.com/djatwood/formailer"
+    "github.com/djatwood/formailer/handlers"
 )
 
 func Send(w http.ResponseWriter, r *http.Request) {
@@ -20,7 +21,7 @@ func Send(w http.ResponseWriter, r *http.Request) {
     })
 
 
-	cfg.Vercel(w, r)
+	handlers.Vercel(&cfg, w, r)
 }
 ```
 

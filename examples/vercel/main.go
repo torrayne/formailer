@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/djatwood/formailer"
+	"github.com/djatwood/formailer/handlers"
 )
 
 // Formailer handles all form submissions
@@ -24,5 +25,5 @@ func Formailer(w http.ResponseWriter, r *http.Request) {
 		},
 	)
 
-	cfg.Vercel(w, r)
+	handlers.Vercel(&cfg, w, r)
 }

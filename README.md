@@ -28,9 +28,9 @@ cfg.Add(&formailer.Form{
 ```
 And run your handler.
 ```go
-cfg.Vercel(w, r)
+handlers.Vercel(&cfg, w, r)
 // or
-lambda.Start(cfg.Netlify)
+lambda.Start(handlers.Netlify(&cfg))
 ```
 If you want to use your own handler that's not a problem either. [View an example handler](#user-content-custom-handlers).
 

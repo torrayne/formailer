@@ -1,9 +1,11 @@
-package formailer
+package handlers
 
 import (
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/djatwood/formailer"
 )
 
 func vercelResponse(w http.ResponseWriter, code int, err error) {
@@ -18,7 +20,7 @@ func vercelResponse(w http.ResponseWriter, code int, err error) {
 }
 
 // Vercel just needs a normal http handler
-func (c *Config) Vercel(w http.ResponseWriter, r *http.Request) {
+func Vercel(c *formailer.Config, w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		vercelResponse(w, http.StatusMethodNotAllowed, nil)
 		return
@@ -36,9 +38,19 @@ func (c *Config) Vercel(w http.ResponseWriter, r *http.Request) {
 		vercelResponse(w, http.StatusBadRequest, err)
 		return
 	}
-	if v := submission.Values["faxonly"]; v == "1" {
-		vercelResponse(w, http.StatusOK, nil)
-		return
+
+	if v, ok := submission.Values["g-recaptcha-response"]; ok {
+		ok, err := verifyRecaptcha(v.(string))
+		if err != nil {
+			vercelResponse(w, http.StatusInternalServerError, err)
+			return
+		}
+		if !ok {
+			vercelResponse(w, http.StatusBadRequest, nil)
+			return
+		}
+
+		delete(submission.Values, "g-recaptcha-response")
 	}
 
 	server, err := submission.Form.SMTPServer()
