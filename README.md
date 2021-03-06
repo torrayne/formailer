@@ -95,7 +95,7 @@ Here is the default template. It hides all inputs with names starting with `_`.
 
 You can override this template on any form by using the `Template` field.
 ```go
-forms.Add(formailer.Email{
+forms.Add("form", formailer.Email{
 	...
 	Template: defaultTemplate,
 }
