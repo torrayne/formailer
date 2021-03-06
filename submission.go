@@ -2,23 +2,17 @@ package formailer
 
 import (
 	"bytes"
-	"crypto/rand"
-	"encoding/base32"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"mime/multipart"
 	"net/url"
 	"strings"
-	"text/template"
-
-	"github.com/aymerick/douceur/inliner"
-	mail "github.com/xhit/go-simple-mail/v2"
 )
 
 // Submission is parsed from the body
 type Submission struct {
-	Form        *Form
+	Emails      []Email
 	Values      map[string]interface{}
 	Attachments []Attachment
 }
@@ -42,7 +36,7 @@ func (s *Submission) parseURLEncoded(body string) error {
 
 	for k := range vals {
 		switch k {
-		case "_form_name", "g-recaptcha-response":
+		case "_form_name", "_redirect", "g-recaptcha-response":
 			s.Values[k] = vals.Get(k)
 		default:
 			s.Values[k] = vals[k]
@@ -93,49 +87,14 @@ func (s *Submission) parseMultipartForm(contentType, body string) error {
 	}
 }
 
-func (s *Submission) generate() (string, error) {
-	t := template.New("email").Funcs(templateFuncMap)
-	_, err := t.Parse(s.Form.GetTemplate())
-	if err != nil {
-		return "", err
+// Send sends all the emails for this form
+func (s *Submission) Send() error {
+	for _, e := range s.Emails {
+		fmt.Println(e)
+		if err := e.Send(s); err != nil {
+			return err
+		}
 	}
 
-	var email bytes.Buffer
-	err = t.Execute(&email, s)
-	if err != nil {
-		return "", err
-	}
-
-	return inliner.Inline(email.String())
-}
-
-// Send sends the email
-func (s *Submission) Send(server *mail.SMTPServer) error {
-	message, err := s.generate()
-	if err != nil {
-		return err
-	}
-
-	token := make([]byte, 32)
-	if _, err := rand.Read(token); err != nil {
-		return errors.New("failed to generate message-id")
-	}
-
-	email := mail.NewMSG()
-	email.AddTo(s.Form.To)
-	email.SetFrom(s.Form.From)
-	email.SetSubject(s.Form.Subject)
-	email.SetBody(mail.TextHTML, message)
-	email.AddHeader("Message-Id", base32.StdEncoding.EncodeToString(token))
-
-	for _, attachment := range s.Attachments {
-		email.AddAttachmentData(attachment.Data, attachment.Filename, attachment.MimeType)
-	}
-
-	client, err := server.Connect()
-	if err != nil {
-		return err
-	}
-	defer client.Close()
-	return email.Send(client)
+	return nil
 }

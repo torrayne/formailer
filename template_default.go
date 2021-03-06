@@ -9,6 +9,7 @@ const defaultTemplate = `<html lang="en">
         }
 
         #wrapper {
+            max-width: 800px;
             padding: 30px 20px;
             border: 1px solid #ccc;
             border-radius: 4px;
@@ -17,7 +18,6 @@ const defaultTemplate = `<html lang="en">
 
         .content {
             width: 100%;
-            max-width: 800px;
             margin: 0;
 
         }
@@ -59,7 +59,7 @@ const defaultTemplate = `<html lang="en">
 <body>
     <div id="wrapper">
         <div class="content">
-            <h1>New {{.Form.Name}} Submission</h1>
+            <h1>New {{.Values._form_name}} submission</h1>
             <table>
                 <tbody>
                     {{- range $name, $value := .Values -}}

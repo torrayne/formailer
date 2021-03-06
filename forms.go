@@ -6,23 +6,16 @@ import (
 	"strings"
 )
 
-// Config is a map of form configs
-type Config map[string]*Form
+// Forms is a map of form configs
+type Forms map[string][]Email
 
-// Set is a case insentive way to set form configs
-func (c *Config) Set(forms ...*Form) {
-	for _, form := range forms {
-		(*c)[strings.ToLower(form.Name)] = form
-	}
-}
-
-// Get is a case insentive way to get form configs
-func (c *Config) Get(name string) *Form {
-	return (*c)[strings.ToLower(name)]
+// Add is a case insentive way to set form configs
+func (f Forms) Add(form string, emails ...Email) {
+	f[form] = append(f[form], emails...)
 }
 
 // Parse parses the body string based on the provided content type
-func (c *Config) Parse(contentType string, body string) (*Submission, error) {
+func (f Forms) Parse(contentType string, body string) (*Submission, error) {
 	submission := new(Submission)
 	submission.Values = make(map[string]interface{})
 
@@ -37,11 +30,14 @@ func (c *Config) Parse(contentType string, body string) (*Submission, error) {
 		err = errors.New("invalid content type")
 	}
 
-	formName, ok := submission.Values["_form_name"].(string)
+	form, ok := submission.Values["_form_name"].(string)
 	if !ok {
 		return nil, fmt.Errorf("field _form_name not of type string or not set")
 	}
 
-	submission.Form = c.Get(formName)
+	submission.Emails, ok = f[form]
+	if !ok {
+		return nil, fmt.Errorf("missing emails for form %s", form)
+	}
 	return submission, err
 }

@@ -30,7 +30,7 @@ func netlifyResponse(code int, err error, headers ...[2]string) *events.APIGatew
 }
 
 // Netlify takes in a aws lambda request and sends an email
-func Netlify(c *formailer.Config) func(events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+func Netlify(c formailer.Forms) func(events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	return func(request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 		if request.HTTPMethod != "POST" {
 			return netlifyResponse(http.StatusMethodNotAllowed, nil), nil
@@ -53,21 +53,16 @@ func Netlify(c *formailer.Config) func(events.APIGatewayProxyRequest) (*events.A
 			delete(submission.Values, "g-recaptcha-response")
 		}
 
-		server, err := submission.Form.SMTPServer()
-		if err != nil {
-			return netlifyResponse(500, nil), nil
-		}
-
-		err = submission.Send(server)
+		err = submission.Send()
 		if err != nil {
 			return netlifyResponse(http.StatusInternalServerError, err), nil
 		}
 
 		statusCode := http.StatusOK
 		headers := [][2]string{}
-		if len(submission.Form.Redirect) > 0 {
+		if redirect, ok := submission.Values["_redirect"]; ok {
 			statusCode = http.StatusSeeOther
-			headers = append(headers, [2]string{"location", submission.Form.Redirect})
+			headers = append(headers, [2]string{"location", redirect.(string)})
 		}
 
 		return netlifyResponse(statusCode, nil, headers...), nil

@@ -10,7 +10,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	out, err := os.Create("defaultTemplate.go")
+	out, err := os.Create("template_default.go")
 	if err != nil {
 		panic(err)
 	}

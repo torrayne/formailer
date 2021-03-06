@@ -20,7 +20,7 @@ func vercelResponse(w http.ResponseWriter, code int, err error) {
 }
 
 // Vercel just needs a normal http handler
-func Vercel(c *formailer.Config, w http.ResponseWriter, r *http.Request) {
+func Vercel(c formailer.Forms, w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		vercelResponse(w, http.StatusMethodNotAllowed, nil)
 		return
@@ -53,22 +53,16 @@ func Vercel(c *formailer.Config, w http.ResponseWriter, r *http.Request) {
 		delete(submission.Values, "g-recaptcha-response")
 	}
 
-	server, err := submission.Form.SMTPServer()
-	if err != nil {
-		vercelResponse(w, http.StatusInternalServerError, err)
-		return
-	}
-
-	err = submission.Send(server)
+	err = submission.Send()
 	if err != nil {
 		vercelResponse(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	statusCode := http.StatusOK
-	if len(submission.Form.Redirect) > 0 {
+	if redirect, ok := submission.Values["_redirect"]; ok {
 		statusCode = http.StatusSeeOther
-		w.Header().Add("Location", submission.Form.Redirect)
+		w.Header().Add("Location", redirect.(string))
 	}
 
 	vercelResponse(w, statusCode, nil)

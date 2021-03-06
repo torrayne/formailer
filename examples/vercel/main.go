@@ -9,21 +9,13 @@ import (
 
 // Formailer handles all form submissions
 func Formailer(w http.ResponseWriter, r *http.Request) {
-	cfg := make(formailer.Config)
-	cfg.Set(
-		&formailer.Form{
-			To:       "support@domain.com",
-			From:     `"Company" <noreply@domain.com>`,
-			Subject:  "New Submission",
-			Redirect: "/success",
-		}, &formailer.Form{
-			Name:     "Contact",
-			To:       "info@domain.com",
-			From:     `"Company" <noreply@domain.com>`,
-			Subject:  "New Contact Submission",
-			Redirect: "https://domin.com/thankyou",
-		},
-	)
+	forms := make(formailer.Forms)
+	forms.Add("Contact", formailer.Email{
+		ID:      "contact",
+		To:      "info@domain.com",
+		From:    `"Company" <noreply@domain.com>`,
+		Subject: "New Contact Submission",
+	})
 
-	handlers.Vercel(&cfg, w, r)
+	handlers.Vercel(forms, w, r)
 }
