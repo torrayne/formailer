@@ -8,7 +8,7 @@ import (
 	"os"
 )
 
-var ErrRecaptchaBadRequest = errors.New(http.StatusText(http.StatusInternalServerError))
+var errRecaptchaBadRequest = errors.New(http.StatusText(http.StatusInternalServerError))
 
 type recaptchaResponse struct {
 	Success    bool
@@ -37,7 +37,7 @@ func verifyRecaptcha(response string) (bool, error) {
 	}
 
 	if !body.Success {
-		return body.Success, ErrRecaptchaBadRequest
+		return body.Success, errRecaptchaBadRequest
 	}
 
 	return body.Success, nil
