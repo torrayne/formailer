@@ -15,7 +15,8 @@ type recaptchaResponse struct {
 	ErrorCodes []string `json:"error-codes"`
 }
 
-func verifyRecaptcha(response string) (bool, error) {
+// VerifyRecaptcha verifies the recaptcha response
+func VerifyRecaptcha(response string) (bool, error) {
 	data := url.Values{}
 	data.Set("secret", os.Getenv("RECAPTCHA_SECRET"))
 	data.Set("response", response)

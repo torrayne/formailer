@@ -5,7 +5,7 @@ import (
 )
 
 func TestVerifyRecaptcha(t *testing.T) {
-	_, err := verifyRecaptcha("")
+	_, err := VerifyRecaptcha("")
 	if err != nil && err != errRecaptchaBadRequest {
 		t.Error(err)
 	}
