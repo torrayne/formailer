@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"mime/multipart"
 	"net/url"
 	"strings"
@@ -90,7 +89,6 @@ func (s *Submission) parseMultipartForm(contentType, body string) error {
 // Send sends all the emails for this form
 func (s *Submission) Send() error {
 	for _, e := range s.Emails {
-		fmt.Println(e)
 		if err := e.Send(s); err != nil {
 			return err
 		}
