@@ -53,6 +53,11 @@ func Netlify(c formailer.Forms) func(events.APIGatewayProxyRequest) (*events.API
 			delete(submission.Values, "g-recaptcha-response")
 		}
 
+		for _, email := range submission.Emails {
+			email.To = ReplaceDynamic(email.To, submission)
+			email.Subject = ReplaceDynamic(email.Subject, submission)
+		}
+
 		err = submission.Send()
 		if err != nil {
 			return netlifyResponse(http.StatusInternalServerError, err), nil
