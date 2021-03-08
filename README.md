@@ -20,7 +20,7 @@ import (
 
 
 func main() {
-	forms := make(formailer.Config)
+	forms := make(formailer.Forms)
 }
 ```
 Then add your emails settings. You can add multiple emails per form.
