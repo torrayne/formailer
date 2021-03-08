@@ -48,6 +48,14 @@ const defaultTemplate = `<html lang="en">
             font-weight: bold;
         }
 
+        p {
+            margin-top: 0;
+        }
+
+        p:last-of-type {
+            margin-bottom: 0;
+        }
+
         .attribute {
             padding: 0 20px;
             text-decoration: none;
