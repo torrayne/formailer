@@ -2,6 +2,10 @@
 
 ![Go](https://github.com/djatwood/formailer/workflows/Go/badge.svg)
 
+| :exclamation:  Formailer is under active development and is currently very unstable. |
+| ------------------------------------------------------------------------------------ |
+
+
 ![Screenshot](img.png)
 
 If you need your contact form to send you an email but don't need to store form submissions, then Formailer is the serverless library for you!
