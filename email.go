@@ -21,6 +21,9 @@ type Email struct {
 	ID       string
 	To       string
 	From     string
+	Cc       []string
+	Bcc      []string
+	ReplyTo  string
 	Subject  string
 	Template string
 }
@@ -110,6 +113,15 @@ func (e *Email) Send(submission *Submission) error {
 	email.SetBody(mail.TextHTML, message)
 	email.AddHeader("Message-Id", base32.StdEncoding.EncodeToString(token))
 
+	if len(e.ReplyTo) > 0 {
+		email.SetReplyTo(e.ReplyTo)
+	}
+	for _, a := range e.Cc {
+		email.AddCc(a)
+	}
+	for _, a := range e.Bcc {
+		email.AddBcc(a)
+	}
 	for _, attachment := range submission.Attachments {
 		email.AddAttachmentData(attachment.Data, attachment.Filename, attachment.MimeType)
 	}

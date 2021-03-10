@@ -2,6 +2,8 @@ package formailer
 
 import (
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestSetAndGet(t *testing.T) {
@@ -18,7 +20,7 @@ func TestSetAndGet(t *testing.T) {
 	forms.Add(form, emails...)
 
 	for i := range forms[form] {
-		if forms[form][i] != emails[i] {
+		if !cmp.Equal(forms[form][i], emails[i]) {
 			t.Error("Unexpected result getting form from config")
 		}
 	}
