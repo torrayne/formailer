@@ -89,21 +89,16 @@ func (e *Email) generate(s *Submission) (string, error) {
 	return inliner.Inline(email.String())
 }
 
-// Send sends an email generating the message with the provided submission
-func (e *Email) Send(submission *Submission) error {
-	server, err := e.server()
-	if err != nil {
-		return err
-	}
-
+// Email returns a *mail.Email generating the message with the provided submission
+func (e *Email) Email(submission *Submission) (*mail.Email, error) {
 	message, err := e.generate(submission)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	token := make([]byte, 32)
 	if _, err := rand.Read(token); err != nil {
-		return errors.New("failed to generate message-id")
+		return nil, errors.New("failed to generate message-id")
 	}
 
 	email := mail.NewMSG()
@@ -126,11 +121,20 @@ func (e *Email) Send(submission *Submission) error {
 		email.AddAttachmentData(attachment.Data, attachment.Filename, attachment.MimeType)
 	}
 
-	client, err := server.Connect()
+	return email, nil
+}
+
+// Send sends the provided email
+func (e *Email) Send(email *mail.Email) error {
+	server, err := e.server()
 	if err != nil {
 		return err
 	}
 
+	client, err := server.Connect()
+	if err != nil {
+		return err
+	}
 	defer client.Close()
 	return email.Send(client)
 }

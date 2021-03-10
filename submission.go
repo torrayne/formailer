@@ -89,7 +89,12 @@ func (s *Submission) parseMultipartForm(contentType, body string) error {
 // Send sends all the emails for this form
 func (s *Submission) Send() error {
 	for _, e := range s.Emails {
-		if err := e.Send(s); err != nil {
+		email, err := e.Email(s)
+		if err != nil {
+			return err
+		}
+
+		if err := e.Send(email); err != nil {
 			return err
 		}
 	}
