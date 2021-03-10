@@ -32,6 +32,8 @@ Then add your emails settings. You can add multiple emails per form.
 forms.Add("Contact", formailer.Email{
 	ID:      "contact",
 	To:      "info@domain.com",
+	Cc:      []string{"support@domain.com"},
+	Bcc:      []string{"support@domain.com"},
 	From:    `"Company" <noreply@domain.com>`,
 	Subject: "New Contact Submission",
 })
@@ -39,6 +41,7 @@ forms.Add("Quote", formailer.Email{
 	ID:      "quote",
 	To:      "sales@domain.com",
 	From:    `"Company" <noreply@domain.com>`,
+	ReplyTo: `"Company" <support@domain.com>`,
 	Subject: "New Quote Request",
 })
 ```
