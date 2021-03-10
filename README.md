@@ -1,10 +1,9 @@
-# Formailer
-
-![Go](https://github.com/djatwood/formailer/workflows/Go/badge.svg)
-
 | :exclamation:  Formailer is under active development and is currently very unstable. |
 | ------------------------------------------------------------------------------------ |
 
+# Formailer
+
+![Go](https://github.com/djatwood/formailer/workflows/Go/badge.svg)
 
 ![Screenshot](img.png)
 
