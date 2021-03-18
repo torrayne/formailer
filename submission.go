@@ -112,10 +112,16 @@ func (s *Submission) parseMultipartForm(contentType, body string) error {
 			values[key] = append(values[key], value.String())
 		}
 
-		if _, ok := s.Values[key]; !ok {
+		if _, ok := s.Values[key]; !ok && key != "g-recaptcha-response" {
 			s.Order = append(s.Order, key)
 		}
-		s.Values[key] = values[key]
+
+		switch key {
+		case "_form_name", "_redirect", "g-recaptcha-response":
+			s.Values[key] = values[key][0]
+		default:
+			s.Values[key] = values[key]
+		}
 	}
 }
 
