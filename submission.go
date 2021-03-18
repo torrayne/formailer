@@ -35,9 +35,11 @@ func (s *Submission) parseJSON(body string) error {
 
 	index := make(map[string]int)
 	for key := range s.Values {
-		s.Order = append(s.Order, key)
-		esc, _ := json.Marshal(key)
-		index[key] = bytes.Index(b, append(esc, ':'))
+		if key != "g-recaptcha-response" {
+			s.Order = append(s.Order, key)
+			esc, _ := json.Marshal(key)
+			index[key] = bytes.Index(b, append(esc, ':'))
+		}
 	}
 
 	sort.Slice(s.Order, func(i, j int) bool {
