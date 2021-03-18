@@ -54,6 +54,7 @@ func TestGenerate(t *testing.T) {
 
 	submission := Submission{
 		Emails: []Email{email},
+		Order:  []string{"Name", "Message", "_form_name"},
 		Values: map[string]interface{}{
 			"Name":       []string{"Daniel", "Atwood"},
 			"Message":    "Hello, World!",

@@ -7,11 +7,14 @@ import (
 	"mime"
 	"mime/multipart"
 	"net/url"
+	"sort"
+	"strings"
 )
 
 // Submission is parsed from the body
 type Submission struct {
 	Emails      []Email
+	Order       []string
 	Values      map[string]interface{}
 	Attachments []Attachment
 }
@@ -24,7 +27,24 @@ type Attachment struct {
 }
 
 func (s *Submission) parseJSON(body string) error {
-	return json.Unmarshal([]byte(body), &s.Values)
+	b := []byte(body)
+	err := json.Unmarshal(b, &s.Values)
+	if err != nil {
+		return err
+	}
+
+	index := make(map[string]int)
+	for key := range s.Values {
+		s.Order = append(s.Order, key)
+		esc, _ := json.Marshal(key)
+		index[key] = bytes.Index(b, append(esc, ':'))
+	}
+
+	sort.Slice(s.Order, func(i, j int) bool {
+		return index[s.Order[i]] < index[s.Order[j]]
+	})
+
+	return nil
 }
 
 func (s *Submission) parseURLEncoded(body string) error {
@@ -33,14 +53,25 @@ func (s *Submission) parseURLEncoded(body string) error {
 		return err
 	}
 
-	for k := range vals {
-		switch k {
+	index := make(map[string]int)
+	for key := range vals {
+		index[key] = strings.Index(body, key+"=")
+		if key != "g-recaptcha-response" {
+			s.Order = append(s.Order, key)
+		}
+
+		switch key {
 		case "_form_name", "_redirect", "g-recaptcha-response":
-			s.Values[k] = vals.Get(k)
+			s.Values[key] = vals.Get(key)
 		default:
-			s.Values[k] = vals[k]
+			s.Values[key] = vals[key]
 		}
 	}
+
+	sort.Slice(s.Order, func(i, j int) bool {
+		return index[s.Order[i]] < index[s.Order[j]]
+	})
+
 	return nil
 }
 
@@ -56,6 +87,7 @@ func (s *Submission) parseMultipartForm(contentType, body string) error {
 	}
 	decodedBody = append(decodedBody, '\n')
 
+	values := make(url.Values)
 	reader := multipart.NewReader(bytes.NewReader(decodedBody), headerParams["boundary"])
 	for {
 		part, err := reader.NextPart()
@@ -63,6 +95,7 @@ func (s *Submission) parseMultipartForm(contentType, body string) error {
 			return err
 		}
 
+		key := part.FormName()
 		value := new(bytes.Buffer)
 		value.ReadFrom(part)
 
@@ -74,10 +107,15 @@ func (s *Submission) parseMultipartForm(contentType, body string) error {
 				Data:     value.Bytes(),
 			}
 			s.Attachments = append(s.Attachments, attachment)
-			s.Values[part.FormName()] = part.FileName()
+			values[key] = append(values[key], part.FileName())
 		} else {
-			s.Values[part.FormName()] = value.String()
+			values[key] = append(values[key], value.String())
 		}
+
+		if _, ok := s.Values[key]; !ok {
+			s.Order = append(s.Order, key)
+		}
+		s.Values[key] = values[key]
 	}
 }
 

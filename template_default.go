@@ -70,11 +70,12 @@ const defaultTemplate = `<html lang="en">
             <h1>New {{.Values._form_name}} submission</h1>
             <table>
                 <tbody>
-                    {{- range $name, $value := .Values -}}
-                    {{- if ne (slice $name 0 1) "_" -}}
+                    {{- range $key := .Order -}}
+                    {{- if ne (slice . 0 1) "_" -}}
                     <tr>
-                        <th>{{$name}}</th>
+                        <th>{{ $key }}</th>
                         <td>
+                            {{- $value := index $.Values $key -}}
                             {{- if (isSlice $value) -}}
                             {{- range $i, $v := $value -}}
                             <p>{{$v}}</p>
