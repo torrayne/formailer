@@ -148,7 +148,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	// Parse body
 	submission, err := c.Parse(r.Header.Get("Content-Type"), body.String())
 	// check for EOF when submitting as multipart/form-data
-	if err != nil && err != io.EOF {
+	if err != nil {
 		// handle error
 		return
 	}

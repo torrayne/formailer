@@ -2,7 +2,6 @@ package formailer
 
 import (
 	"bytes"
-	"io"
 	"mime/multipart"
 	"testing"
 )
@@ -38,7 +37,7 @@ func TestParseMultipartForm(t *testing.T) {
 	submission := new(Submission)
 	submission.Values = make(map[string]interface{})
 	err := submission.parseMultipartForm("multipart/form-data; boundary="+boundary, b.String())
-	if err != nil && err != io.EOF {
+	if err != nil {
 		t.Error(err)
 	}
 }

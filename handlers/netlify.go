@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"io"
 	"net/http"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -37,7 +36,7 @@ func Netlify(c formailer.Forms) func(events.APIGatewayProxyRequest) (*events.API
 		}
 
 		submission, err := c.Parse(request.Headers["content-type"], request.Body)
-		if err != nil && err != io.EOF {
+		if err != nil {
 			return netlifyResponse(http.StatusBadRequest, err), nil
 		}
 

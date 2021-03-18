@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"io"
 	"mime"
 	"mime/multipart"
 	"net/url"
@@ -93,6 +94,9 @@ func (s *Submission) parseMultipartForm(contentType, body string) error {
 	reader := multipart.NewReader(bytes.NewReader(decodedBody), headerParams["boundary"])
 	for {
 		part, err := reader.NextPart()
+		if err == io.EOF {
+			return nil
+		}
 		if err != nil {
 			return err
 		}
