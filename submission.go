@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"mime"
 	"mime/multipart"
 	"net/url"
-	"strings"
 )
 
 // Submission is parsed from the body
@@ -45,14 +45,9 @@ func (s *Submission) parseURLEncoded(body string) error {
 }
 
 func (s *Submission) parseMultipartForm(contentType, body string) error {
-	header := strings.Split(contentType, ";")
-	var boundary string
-	for _, h := range header {
-		index := strings.Index(h, "boundary")
-		if index > -1 {
-			boundary = strings.TrimSpace(h[index+9:])
-			break
-		}
+	_, headerParams, err := mime.ParseMediaType(contentType)
+	if err != nil {
+		return err
 	}
 
 	decodedBody, err := base64.StdEncoding.DecodeString(body)
@@ -61,7 +56,7 @@ func (s *Submission) parseMultipartForm(contentType, body string) error {
 	}
 	decodedBody = append(decodedBody, '\n')
 
-	reader := multipart.NewReader(bytes.NewReader(decodedBody), boundary)
+	reader := multipart.NewReader(bytes.NewReader(decodedBody), headerParams["boundary"])
 	for {
 		part, err := reader.NextPart()
 		if err != nil {

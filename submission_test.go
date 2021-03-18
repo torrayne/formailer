@@ -37,7 +37,7 @@ func TestParseMultipartForm(t *testing.T) {
 
 	submission := new(Submission)
 	submission.Values = make(map[string]interface{})
-	err := submission.parseMultipartForm("multipart/form-data  boundary="+boundary, b.String())
+	err := submission.parseMultipartForm("multipart/form-data; boundary="+boundary, b.String())
 	if err != nil && err != io.EOF {
 		t.Error(err)
 	}
