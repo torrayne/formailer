@@ -12,9 +12,14 @@ import (
 	"text/template"
 	"time"
 
+	_ "embed"
+
 	"github.com/aymerick/douceur/inliner"
 	mail "github.com/xhit/go-simple-mail/v2"
 )
+
+//go:embed template.html
+var defaultTemplate string
 
 // Email contains all the setting to send an email
 type Email struct {
