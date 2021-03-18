@@ -12,5 +12,5 @@ var templateFuncMap = template.FuncMap{
 }
 
 func isSlice(v interface{}) bool {
-	return "slice" == reflect.TypeOf(v).Kind().String()
+	return reflect.TypeOf(v).Kind().String() == "slice"
 }
