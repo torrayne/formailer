@@ -32,6 +32,10 @@ var replaceKeys = []string{
 	"g-recaptcha-response",
 }
 
+var ignoreFields = map[string]bool{
+	"g-recaptcha-response": true,
+}
+
 func (s *Submission) useFirst(vals url.Values) {
 	for _, key := range replaceKeys {
 		s.Values[key] = vals.Get(key)
@@ -47,7 +51,7 @@ func (s *Submission) parseJSON(body string) error {
 
 	index := make(map[string]int)
 	for key := range s.Values {
-		if key != "g-recaptcha-response" {
+		if !ignoreFields[key] {
 			s.Order = append(s.Order, key)
 			esc, _ := json.Marshal(key)
 			index[key] = bytes.Index(b, append(esc, ':'))
@@ -72,7 +76,7 @@ func (s *Submission) parseURLEncoded(body string) error {
 		s.Values[key] = vals[key]
 		index[key] = strings.Index(body, key+"=")
 
-		if key != "g-recaptcha-response" {
+		if !ignoreFields[key] {
 			s.Order = append(s.Order, key)
 		}
 	}
@@ -126,7 +130,7 @@ func (s *Submission) parseMultipartForm(contentType, body string) error {
 			values[key] = append(values[key], value.String())
 		}
 
-		if _, ok := s.Values[key]; !ok && key != "g-recaptcha-response" {
+		if _, ok := s.Values[key]; !ok && !ignoreFields[key] {
 			s.Order = append(s.Order, key)
 		}
 
