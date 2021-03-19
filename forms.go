@@ -6,9 +6,7 @@ import (
 	"mime"
 )
 
-// Forms is a map of forms
-var Forms = make(map[string]Form)
-
+type Config map[string]Form
 type Form struct {
 	Name     string
 	Emails   []Email
@@ -18,6 +16,9 @@ type Form struct {
 	ignore map[string]bool
 }
 
+// DefaultConfig is the default Config
+var DefaultConfig = make(Config)
+
 func sliceToMap(slice []string) map[string]bool {
 	m := make(map[string]bool)
 	for _, value := range slice {
@@ -26,8 +27,18 @@ func sliceToMap(slice []string) map[string]bool {
 	return m
 }
 
-// Add adds forms to the config
+// Add adds forms to the default config
 func Add(forms ...Form) {
+	DefaultConfig.Add(forms...)
+}
+
+// Parse creates a submission using the default config
+func Parse(contentType, body string) (*Submission, error) {
+	return DefaultConfig.Parse(contentType, body)
+}
+
+// Add adds forms to the config
+func (c Config) Add(forms ...Form) {
 	for _, form := range forms {
 		if len(form.Ignore) < 1 {
 			form.Ignore = []string{
@@ -36,17 +47,12 @@ func Add(forms ...Form) {
 		}
 
 		form.ignore = sliceToMap(form.Ignore)
-		Forms[form.Name] = form
+		c[form.Name] = form
 	}
 }
 
-// AddEmail adds emails to the form
-func (f *Form) AddEmail(emails ...Email) {
-	f.Emails = append(f.Emails, emails...)
-}
-
-// Parse parses the body string based on the provided content type
-func Parse(contentType string, body string) (*Submission, error) {
+// Parse creates a submission
+func (c Config) Parse(contentType string, body string) (*Submission, error) {
 	submission := new(Submission)
 	submission.Values = make(map[string]interface{})
 
@@ -71,9 +77,14 @@ func Parse(contentType string, body string) (*Submission, error) {
 		return nil, fmt.Errorf("field _form_name not of type string or not set")
 	}
 
-	submission.Form, ok = Forms[form]
+	submission.Form, ok = c[form]
 	if !ok {
 		return nil, fmt.Errorf("missing emails for form %s", form)
 	}
 	return submission, err
+}
+
+// AddEmail adds emails to the form
+func (f *Form) AddEmail(emails ...Email) {
+	f.Emails = append(f.Emails, emails...)
 }

@@ -53,9 +53,9 @@ func main() {
 And run your handler.
 ```go
 // Vercel
-handlers.Vercel(formailer.Forms, w, r)
+handlers.Vercel(formailer.DefaultConfig, w, r)
 // Netlify
-lambda.Start(handlers.Netlify(formailer.Forms))
+lambda.Start(handlers.Netlify(formailer.DefaultConfig))
 ```
 If you want to use your own handler that's not a problem either. [View an example handler](#user-content-custom-handlers).
 

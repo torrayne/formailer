@@ -18,5 +18,5 @@ func Formailer(w http.ResponseWriter, r *http.Request) {
 	})
 
 	formailer.Add(contact)
-	handlers.Vercel(formailer.Forms, w, r)
+	handlers.Vercel(formailer.DefaultConfig, w, r)
 }

@@ -20,7 +20,7 @@ func TestSetAndGet(t *testing.T) {
 	form.AddEmail(email)
 	Add(form)
 
-	for _, set := range Forms {
+	for _, set := range DefaultConfig {
 		if !cmp.Equal(set, form, cmpopts.IgnoreUnexported(Form{})) {
 			t.Error("Unexpected result getting form from config")
 		}
