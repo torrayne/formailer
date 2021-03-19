@@ -81,6 +81,9 @@ func (c Config) Parse(contentType string, body string) (*Submission, error) {
 	if !ok {
 		return nil, fmt.Errorf("missing emails for form %s", form)
 	}
+
+	submission.removeIgnored()
+
 	return submission, err
 }
 

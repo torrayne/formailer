@@ -36,6 +36,15 @@ func (s *Submission) forceString(vals url.Values) {
 	}
 }
 
+func (s *Submission) removeIgnored() {
+	for i := 0; i < len(s.Order); i++ {
+		if s.Form.ignore[s.Order[i]] {
+			s.Order = append(s.Order[:i], s.Order[i+1:]...)
+			i--
+		}
+	}
+}
+
 func (s *Submission) parseJSON(body string) error {
 	b := []byte(body)
 	err := json.Unmarshal(b, &s.Values)
@@ -69,10 +78,7 @@ func (s *Submission) parseURLEncoded(body string) error {
 	for key := range vals {
 		s.Values[key] = vals[key]
 		index[key] = strings.Index(body, key+"=")
-
-		if !s.Form.ignore[key] {
-			s.Order = append(s.Order, key)
-		}
+		s.Order = append(s.Order, key)
 	}
 
 	sort.Slice(s.Order, func(i, j int) bool {
@@ -119,7 +125,7 @@ func (s *Submission) parseMultipartForm(boundary, body string) error {
 			values[key] = append(values[key], value.String())
 		}
 
-		if _, ok := s.Values[key]; !ok && !s.Form.ignore[key] {
+		if _, ok := s.Values[key]; !ok {
 			s.Order = append(s.Order, key)
 		}
 
