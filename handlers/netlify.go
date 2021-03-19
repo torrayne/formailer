@@ -29,13 +29,13 @@ func netlifyResponse(code int, err error, headers ...[2]string) *events.APIGatew
 }
 
 // Netlify takes in a aws lambda request and sends an email
-func Netlify(c formailer.Forms) func(events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+func Netlify(c map[string]formailer.Form) func(events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	return func(request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 		if request.HTTPMethod != "POST" {
 			return netlifyResponse(http.StatusMethodNotAllowed, nil), nil
 		}
 
-		submission, err := c.Parse(request.Headers["content-type"], request.Body)
+		submission, err := formailer.Parse(request.Headers["content-type"], request.Body)
 		if err != nil {
 			return netlifyResponse(http.StatusBadRequest, err), nil
 		}

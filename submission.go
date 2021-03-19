@@ -13,7 +13,7 @@ import (
 
 // Submission is parsed from the body
 type Submission struct {
-	Emails      []Email
+	Form        Form
 	Order       []string
 	Values      map[string]interface{}
 	Attachments []Attachment
@@ -31,12 +31,6 @@ var forceStringFields = []string{
 	"g-recaptcha-response",
 }
 
-var ignoreFields = map[string]bool{
-	"_form_name":           true,
-	"_redirect":            true,
-	"g-recaptcha-response": true,
-}
-
 func (s *Submission) forceString(vals url.Values) {
 	for _, key := range forceStringFields {
 		s.Values[key] = vals.Get(key)
@@ -52,7 +46,7 @@ func (s *Submission) parseJSON(body string) error {
 
 	index := make(map[string]int)
 	for key := range s.Values {
-		if !ignoreFields[key] {
+		if !s.Form.ignore[key] {
 			s.Order = append(s.Order, key)
 			esc, _ := json.Marshal(key)
 			index[key] = bytes.Index(b, append(esc, ':'))
@@ -77,7 +71,7 @@ func (s *Submission) parseURLEncoded(body string) error {
 		s.Values[key] = vals[key]
 		index[key] = strings.Index(body, key+"=")
 
-		if !ignoreFields[key] {
+		if !s.Form.ignore[key] {
 			s.Order = append(s.Order, key)
 		}
 	}
@@ -126,7 +120,7 @@ func (s *Submission) parseMultipartForm(boundary, body string) error {
 			values[key] = append(values[key], value.String())
 		}
 
-		if _, ok := s.Values[key]; !ok && !ignoreFields[key] {
+		if _, ok := s.Values[key]; !ok && !s.Form.ignore[key] {
 			s.Order = append(s.Order, key)
 		}
 
@@ -140,7 +134,7 @@ func (s *Submission) parseMultipartForm(boundary, body string) error {
 
 // Send sends all the emails for this form
 func (s *Submission) Send() error {
-	for _, e := range s.Emails {
+	for _, e := range s.Form.Emails {
 		email, err := e.Email(s)
 		if err != nil {
 			return err

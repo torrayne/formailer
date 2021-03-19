@@ -14,15 +14,16 @@ import (
 
 // Formailer handles all form submissions
 func Formailer(w http.ResponseWriter, r *http.Request) {
-	forms := make(formailer.Forms)
-	forms.Add("Contact", formailer.Email{
+	contact := formailer.Form{Name: "Contact"}
+	contact.AddEmail(formailer.Email{
 		ID:      "contact",
 		To:      "info@domain.com",
 		From:    `"Company" <noreply@domain.com>`,
 		Subject: "New Contact Submission",
 	})
 
-	handlers.Vercel(forms, w, r)
+	formailer.Add(contact)
+	handlers.Vercel(formailer.Forms, w, r)
 }
 ```
 

@@ -4,23 +4,24 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 func TestSetAndGet(t *testing.T) {
-	form := "contact"
-	emails := []Email{
-		{
-			To:      "daniel@atwood.io",
-			From:    "daniel@atwood.io",
-			Subject: "New Contact Form Submission",
-		},
+	form := Form{
+		Name:   "contact",
+		Ignore: []string{"_form_name"},
 	}
+	email := Email{
+		To:      "daniel@atwood.io",
+		From:    "daniel@atwood.io",
+		Subject: "New Contact Form Submission",
+	}
+	form.AddEmail(email)
+	Add(form)
 
-	forms := make(Forms)
-	forms.Add(form, emails...)
-
-	for i := range forms[form] {
-		if !cmp.Equal(forms[form][i], emails[i]) {
+	for _, set := range Forms {
+		if !cmp.Equal(set, form, cmpopts.IgnoreUnexported(Form{})) {
 			t.Error("Unexpected result getting form from config")
 		}
 	}

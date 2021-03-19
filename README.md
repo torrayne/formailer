@@ -11,7 +11,7 @@ If you need your contact form to send you an email but don't need to store form 
 
 ## Quickstart
 
-No matter what hosting platform you are using. The initial setup is the same.
+No matter what hosting platform you are using. The initial setup is the same. Add your emails settings. You can add multiple emails per form.
 ```go
 import (
 	"github.com/djatwood/formailer"
@@ -21,36 +21,39 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 )
 
-
 func main() {
-	forms := make(formailer.Forms)
+	contact := formailer.Form{
+		Name: "Contact",
+	}
+	contact.AddEmail(formailer.Email{
+		ID:      "contact",
+		To:      "info@domain.com",
+		Cc:      []string{"support@domain.com"},
+		Bcc:      []string{"support@domain.com"},
+		From:    `"Company" <noreply@domain.com>`,
+		Subject: "New Contact Submission",
+	})
+	
+	quote := formailer.Form{
+		Name: "Quote",
+	}
+	quote.AddEmail(formailer.Email{
+		ID:      "quote",
+		To:      "sales@domain.com",
+		From:    `"Company" <noreply@domain.com>`,
+		ReplyTo: `"Company" <support@domain.com>`,
+		Subject: "New Quote Request",
+	})
+
+	formailer.Add(contact, quote)
 }
-```
-Then add your emails settings. You can add multiple emails per form.
-```go
-...
-forms.Add("Contact", formailer.Email{
-	ID:      "contact",
-	To:      "info@domain.com",
-	Cc:      []string{"support@domain.com"},
-	Bcc:      []string{"support@domain.com"},
-	From:    `"Company" <noreply@domain.com>`,
-	Subject: "New Contact Submission",
-})
-forms.Add("Quote", formailer.Email{
-	ID:      "quote",
-	To:      "sales@domain.com",
-	From:    `"Company" <noreply@domain.com>`,
-	ReplyTo: `"Company" <support@domain.com>`,
-	Subject: "New Quote Request",
-})
 ```
 And run your handler.
 ```go
 // Vercel
-handlers.Vercel(forms, w, r)
+handlers.Vercel(formailer.Forms, w, r)
 // Netlify
-lambda.Start(handlers.Netlify(forms))
+lambda.Start(handlers.Netlify(formailer.Forms))
 ```
 If you want to use your own handler that's not a problem either. [View an example handler](#user-content-custom-handlers).
 
@@ -146,7 +149,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 	
 	// Parse body
-	submission, err := c.Parse(r.Header.Get("Content-Type"), body.String())
+	submission, err := formailer.Parse(r.Header.Get("Content-Type"), body.String())
 	// check for EOF when submitting as multipart/form-data
 	if err != nil {
 		// handle error

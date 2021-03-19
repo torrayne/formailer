@@ -43,18 +43,16 @@ func TestSMTPSetup(t *testing.T) {
 }
 
 func TestGenerate(t *testing.T) {
-	form := "contact"
+	form := Form{Name: "contact"}
 	email := Email{
-		ID:      form,
+		ID:      form.Name,
 		Subject: "New Contact Form Submission",
 	}
-
-	forms := make(Forms)
-	forms.Add(form, email)
+	form.AddEmail(email)
 
 	submission := Submission{
-		Emails: []Email{email},
-		Order:  []string{"Name", "Message", "_form_name"},
+		Form:  form,
+		Order: []string{"Name", "Message", "_form_name"},
 		Values: map[string]interface{}{
 			"Name":       []string{"Daniel", "Atwood"},
 			"Message":    "Hello, World!",

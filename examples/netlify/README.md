@@ -11,15 +11,15 @@ import (
 )
 
 func main() {
-	forms := make(formailer.Forms)
-	forms.Add("Contact", formailer.Email{
+	contact := formailer.Form{Name: "Contact"}
+	contact.AddEmail(formailer.Email{
 		ID:      "contact",
 		To:      "info@domain.com",
 		From:    `"Company" <noreply@domain.com>`,
 		Subject: "New Contact Submission",
 	})
-
-	lambda.Start(handlers.Netlify(forms))
+	formailer.Add(contact)
+	lambda.Start(handlers.Netlify(formailer.Forms))
 }
 ```
 2. Update your `netlify.toml`:

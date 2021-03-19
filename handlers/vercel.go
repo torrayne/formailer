@@ -20,7 +20,7 @@ func vercelResponse(w http.ResponseWriter, code int, err error) {
 }
 
 // Vercel just needs a normal http handler
-func Vercel(c formailer.Forms, w http.ResponseWriter, r *http.Request) {
+func Vercel(c map[string]formailer.Form, w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		vercelResponse(w, http.StatusMethodNotAllowed, nil)
 		return
@@ -33,7 +33,7 @@ func Vercel(c formailer.Forms, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	submission, err := c.Parse(r.Header.Get("Content-Type"), body.String())
+	submission, err := formailer.Parse(r.Header.Get("Content-Type"), body.String())
 	if err != nil {
 		vercelResponse(w, http.StatusBadRequest, err)
 		return
