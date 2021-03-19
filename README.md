@@ -152,7 +152,6 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	
 	// Parse body
 	submission, err := formailer.Parse(r.Header.Get("Content-Type"), body.String())
-	// check for EOF when submitting as multipart/form-data
 	if err != nil {
 		// handle error
 		return
