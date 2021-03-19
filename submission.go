@@ -27,6 +27,17 @@ type Attachment struct {
 	Data     []byte
 }
 
+var replaceKeys = []string{
+	"_form_name", "_redirect",
+	"g-recaptcha-response",
+}
+
+func (s *Submission) useFirst(vals url.Values) {
+	for _, key := range replaceKeys {
+		s.Values[key] = vals.Get(key)
+	}
+}
+
 func (s *Submission) parseJSON(body string) error {
 	b := []byte(body)
 	err := json.Unmarshal(b, &s.Values)
@@ -58,22 +69,19 @@ func (s *Submission) parseURLEncoded(body string) error {
 
 	index := make(map[string]int)
 	for key := range vals {
+		s.Values[key] = vals[key]
 		index[key] = strings.Index(body, key+"=")
+
 		if key != "g-recaptcha-response" {
 			s.Order = append(s.Order, key)
-		}
-
-		switch key {
-		case "_form_name", "_redirect", "g-recaptcha-response":
-			s.Values[key] = vals.Get(key)
-		default:
-			s.Values[key] = vals[key]
 		}
 	}
 
 	sort.Slice(s.Order, func(i, j int) bool {
 		return index[s.Order[i]] < index[s.Order[j]]
 	})
+
+	s.useFirst(vals)
 
 	return nil
 }
@@ -95,7 +103,7 @@ func (s *Submission) parseMultipartForm(contentType, body string) error {
 	for {
 		part, err := reader.NextPart()
 		if err == io.EOF {
-			return nil
+			break
 		}
 		if err != nil {
 			return err
@@ -122,13 +130,12 @@ func (s *Submission) parseMultipartForm(contentType, body string) error {
 			s.Order = append(s.Order, key)
 		}
 
-		switch key {
-		case "_form_name", "_redirect", "g-recaptcha-response":
-			s.Values[key] = values[key][0]
-		default:
-			s.Values[key] = values[key]
-		}
+		s.Values[key] = values[key]
 	}
+
+	s.useFirst(values)
+
+	return nil
 }
 
 // Send sends all the emails for this form
