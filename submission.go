@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"io"
-	"mime"
 	"mime/multipart"
 	"net/url"
 	"sort"
@@ -90,12 +89,7 @@ func (s *Submission) parseURLEncoded(body string) error {
 	return nil
 }
 
-func (s *Submission) parseMultipartForm(contentType, body string) error {
-	_, headerParams, err := mime.ParseMediaType(contentType)
-	if err != nil {
-		return err
-	}
-
+func (s *Submission) parseMultipartForm(boundary, body string) error {
 	decodedBody, err := base64.StdEncoding.DecodeString(body)
 	if err != nil {
 		decodedBody = []byte(body)
@@ -103,7 +97,7 @@ func (s *Submission) parseMultipartForm(contentType, body string) error {
 	decodedBody = append(decodedBody, '\n')
 
 	values := make(url.Values)
-	reader := multipart.NewReader(bytes.NewReader(decodedBody), headerParams["boundary"])
+	reader := multipart.NewReader(bytes.NewReader(decodedBody), boundary)
 	for {
 		part, err := reader.NextPart()
 		if err == io.EOF {

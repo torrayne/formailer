@@ -3,7 +3,7 @@ package formailer
 import (
 	"errors"
 	"fmt"
-	"strings"
+	"mime"
 )
 
 // Forms is a map of form configs
@@ -19,14 +19,19 @@ func (f Forms) Parse(contentType string, body string) (*Submission, error) {
 	submission := new(Submission)
 	submission.Values = make(map[string]interface{})
 
-	var err error
-	if strings.Contains(contentType, "application/json") {
+	contentType, params, err := mime.ParseMediaType(contentType)
+	if err != nil {
+		return nil, err
+	}
+
+	switch contentType {
+	case "application/json":
 		err = submission.parseJSON(body)
-	} else if strings.Contains(contentType, "application/x-www-form-urlencoded") {
+	case "application/x-www-form-urlencoded":
 		err = submission.parseURLEncoded(body)
-	} else if strings.Contains(contentType, "multipart/form-data") {
-		err = submission.parseMultipartForm(contentType, body)
-	} else {
+	case "multipart/form-data":
+		err = submission.parseMultipartForm(params["boundary"], body)
+	default:
 		err = errors.New("invalid content type")
 	}
 
