@@ -59,9 +59,9 @@ func Netlify(c map[string]formailer.Form) func(events.APIGatewayProxyRequest) (*
 
 		statusCode := http.StatusOK
 		headers := [][2]string{}
-		if redirect, ok := submission.Values["_redirect"]; ok {
+		if len(submission.Form.Redirect) > 0 {
 			statusCode = http.StatusSeeOther
-			headers = append(headers, [2]string{"location", redirect.(string)})
+			headers = append(headers, [2]string{"location", submission.Form.Redirect})
 		}
 
 		return netlifyResponse(statusCode, nil, headers...), nil

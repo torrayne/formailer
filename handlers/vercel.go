@@ -60,9 +60,9 @@ func Vercel(c map[string]formailer.Form, w http.ResponseWriter, r *http.Request)
 	}
 
 	statusCode := http.StatusOK
-	if redirect, ok := submission.Values["_redirect"]; ok {
+	if len(submission.Form.Redirect) > 0 {
 		statusCode = http.StatusSeeOther
-		w.Header().Add("Location", redirect.(string))
+		w.Header().Add("Location", submission.Form.Redirect)
 	}
 
 	vercelResponse(w, statusCode, nil)

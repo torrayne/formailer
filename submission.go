@@ -27,8 +27,7 @@ type Attachment struct {
 }
 
 var forceStringFields = []string{
-	"_form_name", "_redirect",
-	"g-recaptcha-response",
+	"_form_name", "g-recaptcha-response",
 }
 
 func (s *Submission) forceString(vals url.Values) {

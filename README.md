@@ -24,6 +24,7 @@ import (
 func main() {
 	contact := formailer.Form{
 		Name: "Contact",
+		Redirect: "/thank-you/",
 	}
 	contact.AddEmail(formailer.Email{
 		ID:      "contact",
@@ -36,6 +37,7 @@ func main() {
 	
 	quote := formailer.Form{
 		Name: "Quote",
+		Redirect: "/thank-you/",
 	}
 	quote.AddEmail(formailer.Email{
 		ID:      "quote",

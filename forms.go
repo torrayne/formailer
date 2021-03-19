@@ -10,8 +10,9 @@ import (
 var Forms = make(map[string]Form)
 
 type Form struct {
-	Name   string
-	Emails []Email
+	Name     string
+	Emails   []Email
+	Redirect string
 
 	Ignore []string
 	ignore map[string]bool
@@ -30,8 +31,7 @@ func Add(forms ...Form) {
 	for _, form := range forms {
 		if len(form.Ignore) < 1 {
 			form.Ignore = []string{
-				"_form_name", "_redirect",
-				"g-recaptcha-response",
+				"_form_name", "g-recaptcha-response",
 			}
 		}
 
