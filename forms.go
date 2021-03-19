@@ -40,7 +40,7 @@ func Parse(contentType, body string) (*Submission, error) {
 // Add adds forms to the config
 func (c Config) Add(forms ...Form) {
 	for _, form := range forms {
-		if len(form.Ignore) < 1 {
+		if form.Ignore == nil {
 			form.Ignore = []string{
 				"_form_name", "g-recaptcha-response",
 			}
