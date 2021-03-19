@@ -27,7 +27,7 @@ type Attachment struct {
 	Data     []byte
 }
 
-var replaceKeys = []string{
+var forceStringFields = []string{
 	"_form_name", "_redirect",
 	"g-recaptcha-response",
 }
@@ -36,8 +36,8 @@ var ignoreFields = map[string]bool{
 	"g-recaptcha-response": true,
 }
 
-func (s *Submission) useFirst(vals url.Values) {
-	for _, key := range replaceKeys {
+func (s *Submission) forceString(vals url.Values) {
+	for _, key := range forceStringFields {
 		s.Values[key] = vals.Get(key)
 	}
 }
@@ -85,7 +85,7 @@ func (s *Submission) parseURLEncoded(body string) error {
 		return index[s.Order[i]] < index[s.Order[j]]
 	})
 
-	s.useFirst(vals)
+	s.forceString(vals)
 
 	return nil
 }
@@ -137,7 +137,7 @@ func (s *Submission) parseMultipartForm(contentType, body string) error {
 		s.Values[key] = values[key]
 	}
 
-	s.useFirst(values)
+	s.forceString(values)
 
 	return nil
 }
