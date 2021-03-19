@@ -21,7 +21,6 @@ var testSubmissionData = url.Values{
 }
 
 var expectedSubmissionOrder = []string{
-	"_form_name",
 	"name", "message",
 	"urlencoded", "multipart", "json",
 }

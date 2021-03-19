@@ -32,6 +32,8 @@ var forceStringFields = []string{
 }
 
 var ignoreFields = map[string]bool{
+	"_form_name":           true,
+	"_redirect":            true,
 	"g-recaptcha-response": true,
 }
 
