@@ -72,7 +72,7 @@ func (e *Email) server() (*mail.SMTPServer, error) {
 		server.Authentication = mail.AuthLogin
 		server.KeepAlive = false
 		server.ConnectTimeout = 10 * time.Second
-		server.SendTimeout = 10 * time.Second
+		server.SendTimeout = 10 * time.Minute
 
 		return server, nil
 	}
