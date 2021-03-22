@@ -8,9 +8,10 @@ import (
 
 type Config map[string]Form
 type Form struct {
-	Name     string
-	Emails   []Email
-	Redirect string
+	Name      string
+	Emails    []Email
+	Redirect  string
+	ReCAPTCHA bool
 
 	Ignore []string
 	ignore map[string]bool

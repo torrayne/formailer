@@ -39,7 +39,13 @@ func Vercel(c formailer.Config, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if v, ok := submission.Values["g-recaptcha-response"].(string); ok && len(v) > 0 {
+	if submission.Form.ReCAPTCHA {
+		v, exists := submission.Values["g-recaptcha-response"].(string)
+		if !exists || len(v) < 1 {
+			vercelResponse(w, http.StatusBadRequest, nil)
+			return
+		}
+
 		ok, err := VerifyRecaptcha(v)
 		if err != nil {
 			vercelResponse(w, http.StatusInternalServerError, err)

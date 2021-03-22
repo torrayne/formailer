@@ -40,7 +40,12 @@ func Netlify(c formailer.Config) func(events.APIGatewayProxyRequest) (*events.AP
 			return netlifyResponse(http.StatusBadRequest, err), nil
 		}
 
-		if v, ok := submission.Values["g-recaptcha-response"].(string); ok && len(v) > 0 {
+		if submission.Form.ReCAPTCHA {
+			v, exists := submission.Values["g-recaptcha-response"].(string)
+			if !exists || len(v) < 1 {
+				return netlifyResponse(http.StatusBadRequest, err), nil
+			}
+
 			ok, err := VerifyRecaptcha(v)
 			if err != nil {
 				return netlifyResponse(http.StatusInternalServerError, err), nil
