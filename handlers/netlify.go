@@ -40,8 +40,8 @@ func Netlify(c formailer.Config) func(events.APIGatewayProxyRequest) (*events.AP
 			return netlifyResponse(http.StatusBadRequest, err), nil
 		}
 
-		if v, ok := submission.Values["g-recaptcha-response"]; ok {
-			ok, err := VerifyRecaptcha(v.(string))
+		if v, ok := submission.Values["g-recaptcha-response"].(string); ok && len(v) > 0 {
+			ok, err := VerifyRecaptcha(v)
 			if err != nil {
 				return netlifyResponse(http.StatusInternalServerError, err), nil
 			}
