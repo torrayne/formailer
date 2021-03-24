@@ -77,5 +77,5 @@ func Vercel(c formailer.Config, w http.ResponseWriter, r *http.Request) {
 	}
 
 	vercelResponse(w, statusCode, nil)
-	logger.Infof("sent %d emails from %s form", len(submission.Form.Emails), submission.Values["_form_name"])
+	logger.Infof("sent %d emails from %s form\n", len(submission.Form.Emails), submission.Values["_form_name"])
 }

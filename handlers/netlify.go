@@ -73,7 +73,7 @@ func Netlify(c formailer.Config) func(events.APIGatewayProxyRequest) (*events.AP
 			headers = append(headers, [2]string{"location", submission.Form.Redirect})
 		}
 
-		logger.Infof("sent %d emails from %s form", len(submission.Form.Emails), submission.Values["_form_name"])
+		logger.Infof("sent %d emails from %s form\n", len(submission.Form.Emails), submission.Values["_form_name"])
 		return netlifyResponse(statusCode, nil, headers...), nil
 	}
 }
