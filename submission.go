@@ -13,7 +13,7 @@ import (
 
 // Submission is parsed from the body
 type Submission struct {
-	Form        Form
+	Form        *Form
 	Order       []string
 	Values      map[string]interface{}
 	Attachments []Attachment
@@ -54,11 +54,9 @@ func (s *Submission) parseJSON(body string) error {
 
 	index := make(map[string]int)
 	for key := range s.Values {
-		if !s.Form.ignore[key] {
-			s.Order = append(s.Order, key)
-			esc, _ := json.Marshal(key)
-			index[key] = bytes.Index(b, append(esc, ':'))
-		}
+		s.Order = append(s.Order, key)
+		esc, _ := json.Marshal(key)
+		index[key] = bytes.Index(b, append(esc, ':'))
 	}
 
 	sort.Slice(s.Order, func(i, j int) bool {

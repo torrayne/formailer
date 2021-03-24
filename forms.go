@@ -6,30 +6,28 @@ import (
 	"mime"
 )
 
-type Config map[string]Form
+type Config map[string]*Form
 type Form struct {
 	Name      string
 	Emails    []Email
 	Redirect  string
 	ReCAPTCHA bool
 
-	Ignore []string
 	ignore map[string]bool
 }
 
 // DefaultConfig is the default Config
 var DefaultConfig = make(Config)
 
-func sliceToMap(slice []string) map[string]bool {
-	m := make(map[string]bool)
-	for _, value := range slice {
-		m[value] = true
-	}
-	return m
+func New(id string) *Form {
+	f := &Form{Name: id, ignore: make(map[string]bool)}
+	f.Ignore("_form_name", "g-recaptcha-response")
+	Add(f)
+	return f
 }
 
 // Add adds forms to the default config
-func Add(forms ...Form) {
+func Add(forms ...*Form) {
 	DefaultConfig.Add(forms...)
 }
 
@@ -39,15 +37,8 @@ func Parse(contentType, body string) (*Submission, error) {
 }
 
 // Add adds forms to the config
-func (c Config) Add(forms ...Form) {
+func (c Config) Add(forms ...*Form) {
 	for _, form := range forms {
-		if form.Ignore == nil {
-			form.Ignore = []string{
-				"_form_name", "g-recaptcha-response",
-			}
-		}
-
-		form.ignore = sliceToMap(form.Ignore)
 		c[form.Name] = form
 	}
 }
@@ -91,4 +82,10 @@ func (c Config) Parse(contentType string, body string) (*Submission, error) {
 // AddEmail adds emails to the form
 func (f *Form) AddEmail(emails ...Email) {
 	f.Emails = append(f.Emails, emails...)
+}
+
+func (f *Form) Ignore(fields ...string) {
+	for _, field := range fields {
+		f.ignore[field] = true
+	}
 }

@@ -9,7 +9,7 @@ import (
 
 // Formailer handles all form submissions
 func Formailer(w http.ResponseWriter, r *http.Request) {
-	contact := formailer.Form{Name: "Contact"}
+	contact := formailer.New("Contact")
 	contact.AddEmail(formailer.Email{
 		ID:      "contact",
 		To:      "info@domain.com",
@@ -17,6 +17,5 @@ func Formailer(w http.ResponseWriter, r *http.Request) {
 		Subject: "New Contact Submission",
 	})
 
-	formailer.Add(contact)
 	handlers.Vercel(formailer.DefaultConfig, w, r)
 }
