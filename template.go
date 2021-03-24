@@ -3,8 +3,8 @@ package formailer
 //go:generate go run generate/main.go
 
 import (
+	"html/template"
 	"reflect"
-	"text/template"
 )
 
 var templateFuncMap = template.FuncMap{

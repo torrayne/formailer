@@ -6,10 +6,10 @@ import (
 	"encoding/base32"
 	"errors"
 	"fmt"
+	"html/template"
 	"os"
 	"strconv"
 	"strings"
-	"text/template"
 	"time"
 
 	// embed is used to embed the default template file
