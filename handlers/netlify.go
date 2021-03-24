@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -10,9 +11,9 @@ import (
 )
 
 func netlifyResponse(code int, err error, headers ...[2]string) *events.APIGatewayProxyResponse {
+	r := response{}
 	response := &events.APIGatewayProxyResponse{
 		StatusCode: code,
-		Body:       http.StatusText(code),
 		Headers:    make(map[string]string),
 	}
 
@@ -21,13 +22,20 @@ func netlifyResponse(code int, err error, headers ...[2]string) *events.APIGatew
 	}
 
 	if err != nil {
-		response.Body = err.Error()
+		r.Ok = false
+		r.Error = err.Error()
 		if _, ok := response.Headers["location"]; ok {
 			response.Headers["location"] += "?error=" + err.Error()
 		}
 		logger.Error(err)
 	}
 
+	body, err := json.Marshal(r)
+	if err != nil {
+		logger.Errorf("failed to marshal response: %w", err)
+	}
+
+	response.Body = string(body)
 	return response
 }
 
@@ -73,7 +81,7 @@ func Netlify(c formailer.Config) func(events.APIGatewayProxyRequest) (*events.AP
 			headers = append(headers, [2]string{"location", submission.Form.Redirect})
 		}
 
-		logger.Infof("sent %d emails from %s form\n", len(submission.Form.Emails), submission.Values["_form_name"])
+		logger.Infof("sent %d emails from %s form", len(submission.Form.Emails), submission.Values["_form_name"])
 		return netlifyResponse(statusCode, nil, headers...), nil
 	}
 }

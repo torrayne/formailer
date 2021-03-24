@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -8,18 +9,25 @@ import (
 
 	"github.com/djatwood/formailer"
 	"github.com/djatwood/formailer/logger"
+	"github.com/google/martian/log"
 )
 
 func vercelResponse(w http.ResponseWriter, code int, err error) {
-	body := http.StatusText(code)
+	r := response{Ok: true}
 	if err != nil {
-		body = err.Error()
+		r.Ok = false
+		r.Error = err.Error()
 		w.Header().Set("location", w.Header().Get("location")+"?error="+err.Error())
 		logger.Error(err)
 	}
 
+	body, err := json.Marshal(r)
+	if err != nil {
+		log.Errorf("failed to marshal response: %w", err)
+	}
+
 	w.WriteHeader(code)
-	w.Write([]byte(body))
+	w.Write(body)
 }
 
 // Vercel just needs a normal http handler
@@ -77,5 +85,5 @@ func Vercel(c formailer.Config, w http.ResponseWriter, r *http.Request) {
 	}
 
 	vercelResponse(w, statusCode, nil)
-	logger.Infof("sent %d emails from %s form\n", len(submission.Form.Emails), submission.Values["_form_name"])
+	logger.Infof("sent %d emails from %s form", len(submission.Form.Emails), submission.Values["_form_name"])
 }
