@@ -11,15 +11,25 @@ import (
 	"strings"
 )
 
-// Submission is parsed from the body
+// Submission is the unmarshaled version on the form submission.
+// It contains the submitted values and the form settings needed for sending emails.
 type Submission struct {
-	Form        *Form
-	Order       []string
-	Values      map[string]interface{}
+	// Form is the form this submission submitted as.
+	Form *Form
+
+	// Order is a list of the fields in the original order of submisson.
+	// Maps in go are sorted alphabetically which causes readability issues in the generated emails. Note only first level elements are ordered.
+	// The fields set using Form.Ignore will be removed from this list.
+	Order []string
+
+	// Values contains the submitted form data.
+	Values map[string]interface{}
+
+	// Attachments is a list of files to be attached to the email
 	Attachments []Attachment
 }
 
-// Attachment is an array of files to be attached to the email
+// Attachment contains file data for an email attachment
 type Attachment struct {
 	Filename string
 	MimeType string

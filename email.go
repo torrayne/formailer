@@ -24,13 +24,18 @@ var defaultTemplate string
 
 // Email contains all the setting to send an email
 type Email struct {
-	ID       string
-	To       string
-	From     string
-	Cc       []string
-	Bcc      []string
-	ReplyTo  string
-	Subject  string
+	// ID is used when looking up SMTP settings.
+	// It is case-insensitive but will be matched as UPPERCASE. ex: SMTP_FORM-ID_HOST.
+	ID string
+
+	To      string
+	From    string
+	Cc      []string
+	Bcc     []string
+	ReplyTo string
+	Subject string
+
+	// Template is a go html template to be used when generating the email.
 	Template string
 }
 
