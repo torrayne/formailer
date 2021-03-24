@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"mime"
+	"strings"
 )
 
 // Config is a map of Forms used when parsing a submission to load the correct form settings and emails.
@@ -11,7 +12,11 @@ type Config map[string]*Form
 
 // Form is for settings that should be set per submission but not per email. Such as redirects and ReCAPTCHA.
 type Form struct {
-	// Name is a case-sensitive string used to look up forms while parsing a submission. It will be matched to your _form_name field.
+	// ID is a case-insensitive string used to look up forms while parsing a submission. It will be matched to a submission's _form_name field.
+	// If ID is not set, a case-insensitive version of Name will be used for matching instead.
+	ID string
+
+	// Name is a way to store a "Pretty" version of the form ID.
 	Name string
 
 	// Emails is a list of emails. Generally you want to use the AddEmail method instead of adding emails directly.
@@ -33,7 +38,7 @@ var DefaultConfig = make(Config)
 // New creates a new Form and adds it to the default config.
 // It also automatically sets the name to the ID and adds ignores the form name and recaptcha fields.
 func New(id string) *Form {
-	f := &Form{Name: id, ignore: make(map[string]bool)}
+	f := &Form{ID: id, ignore: make(map[string]bool)}
 	f.Ignore("_form_name", "g-recaptcha-response")
 	Add(f)
 	return f
@@ -49,10 +54,11 @@ func Parse(contentType, body string) (*Submission, error) {
 	return DefaultConfig.Parse(contentType, body)
 }
 
-// Add adds forms to the config using the Name as its ID.
+// Add adds forms to the config falling back on Name if ID is not set.
 func (c Config) Add(forms ...*Form) {
 	for _, form := range forms {
-		c[form.Name] = form
+		id := strings.ToLower(or(form.ID, form.Name))
+		c[id] = form
 	}
 }
 
@@ -82,7 +88,7 @@ func (c Config) Parse(contentType string, body string) (*Submission, error) {
 	if !ok {
 		return nil, fmt.Errorf("field _form_name not of type string or not set")
 	}
-
+	form = strings.ToLower(form)
 	submission.Form, ok = c[form]
 	if !ok {
 		return nil, fmt.Errorf("missing emails for form %s", form)
