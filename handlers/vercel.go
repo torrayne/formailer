@@ -49,6 +49,7 @@ func Vercel(c formailer.Config, w http.ResponseWriter, r *http.Request) {
 
 		ok, err := VerifyRecaptcha(v)
 		if err != nil {
+			err = fmt.Errorf("failed to verify reCAPTCHA: %w", err)
 			vercelResponse(w, http.StatusInternalServerError, err)
 			return
 		}
