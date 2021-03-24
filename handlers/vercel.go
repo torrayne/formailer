@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/djatwood/formailer"
+	"github.com/djatwood/formailer/logger"
 )
 
 func vercelResponse(w http.ResponseWriter, code int, err error) {
@@ -14,6 +15,7 @@ func vercelResponse(w http.ResponseWriter, code int, err error) {
 	if err != nil {
 		body = err.Error()
 		w.Header().Set("location", w.Header().Get("location")+"?error="+err.Error())
+		logger.Error(err)
 	}
 
 	w.WriteHeader(code)
@@ -75,4 +77,5 @@ func Vercel(c formailer.Config, w http.ResponseWriter, r *http.Request) {
 	}
 
 	vercelResponse(w, statusCode, nil)
+	logger.Infof("sent %d emails from %s form", len(submission.Form.Emails), submission.Values["_form_name"])
 }

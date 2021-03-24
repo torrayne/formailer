@@ -70,7 +70,7 @@ func (c Config) Parse(contentType string, body string) (*Submission, error) {
 
 	contentType, params, err := mime.ParseMediaType(contentType)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse content-type: %w", err)
 	}
 
 	switch contentType {
@@ -89,7 +89,7 @@ func (c Config) Parse(contentType string, body string) (*Submission, error) {
 
 	form, ok := submission.Values["_form_name"].(string)
 	if !ok || len(form) < 1 {
-		return nil, fmt.Errorf("missing _form_name field in submitted form data: %w", err)
+		return nil, errors.New("missing _form_name field in submitted form data")
 	}
 
 	form = strings.ToLower(form)

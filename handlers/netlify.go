@@ -6,6 +6,7 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/djatwood/formailer"
+	"github.com/djatwood/formailer/logger"
 )
 
 func netlifyResponse(code int, err error, headers ...[2]string) *events.APIGatewayProxyResponse {
@@ -24,6 +25,7 @@ func netlifyResponse(code int, err error, headers ...[2]string) *events.APIGatew
 		if _, ok := response.Headers["location"]; ok {
 			response.Headers["location"] += "?error=" + err.Error()
 		}
+		logger.Error(err)
 	}
 
 	return response
@@ -71,6 +73,7 @@ func Netlify(c formailer.Config) func(events.APIGatewayProxyRequest) (*events.AP
 			headers = append(headers, [2]string{"location", submission.Form.Redirect})
 		}
 
+		logger.Infof("sent %d emails from %s form", len(submission.Form.Emails), submission.Values["_form_name"])
 		return netlifyResponse(statusCode, nil, headers...), nil
 	}
 }
