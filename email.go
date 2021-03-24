@@ -12,6 +12,7 @@ import (
 	"text/template"
 	"time"
 
+	// embed is used to embed the default template file
 	_ "embed"
 
 	"github.com/aymerick/douceur/inliner"
