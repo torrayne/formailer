@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -59,6 +60,7 @@ func Netlify(c formailer.Config) func(events.APIGatewayProxyRequest) (*events.AP
 
 		err = submission.Send()
 		if err != nil {
+			err = fmt.Errorf("failed to send email: %w", err)
 			return netlifyResponse(http.StatusInternalServerError, err), nil
 		}
 

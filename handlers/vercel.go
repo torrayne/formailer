@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -61,6 +62,7 @@ func Vercel(c formailer.Config, w http.ResponseWriter, r *http.Request) {
 
 	err = submission.Send()
 	if err != nil {
+		err = fmt.Errorf("failed to send email: %w", err)
 		vercelResponse(w, http.StatusInternalServerError, err)
 		return
 	}

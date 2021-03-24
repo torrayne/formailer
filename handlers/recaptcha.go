@@ -8,7 +8,7 @@ import (
 	"os"
 )
 
-var errRecaptchaBadRequest = errors.New(http.StatusText(http.StatusInternalServerError))
+var errRecaptchaBadRequest = errors.New("invalid or malformed reCAPTCHA")
 
 type recaptchaResponse struct {
 	Success    bool
@@ -32,13 +32,9 @@ func VerifyRecaptcha(response string) (bool, error) {
 	}
 
 	for _, code := range body.ErrorCodes {
-		if code == "timeout-or-duplicate" {
-			return body.Success, nil
+		if code != "timeout-or-duplicate" {
+			return body.Success, errRecaptchaBadRequest
 		}
-	}
-
-	if !body.Success {
-		return body.Success, errRecaptchaBadRequest
 	}
 
 	return body.Success, nil

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/base32"
-	"errors"
 	"fmt"
 	"html/template"
 	"os"
@@ -55,33 +54,45 @@ func (e *Email) template() string {
 func (e *Email) server() (*mail.SMTPServer, error) {
 	prefix := fmt.Sprintf("SMTP_%s_", strings.ToUpper(e.ID))
 	host := or(os.Getenv(prefix+"HOST"), os.Getenv("SMTP_HOST"))
-	port := or(os.Getenv(prefix+"PORT"), os.Getenv("SMTP_PORT"))
 	user := or(os.Getenv(prefix+"USER"), os.Getenv("SMTP_USER"))
 	pass := or(os.Getenv(prefix+"PASS"), os.Getenv("SMTP_PASS"))
+	defaultPort := os.Getenv("SMTP_PORT")
+	emailPort := os.Getenv(prefix + "PORT")
+	stringPort := or(emailPort, defaultPort)
 
-	if len(host) < 1 || len(port) < 1 || len(user) < 1 || len(pass) < 1 {
-		return nil, fmt.Errorf("incomplete SMTP configuration for %s", e.ID)
+	if len(host) < 1 {
+		return nil, fmt.Errorf("incomlete SMTP configuration missing %sHOST or SMTP_HOST for %s", prefix, e.ID)
+	}
+	if len(stringPort) < 1 {
+		return nil, fmt.Errorf("incomlete SMTP configuration missing %sPORT or SMTP_PORT for %s", prefix, e.ID)
+	}
+	if len(user) < 1 {
+		return nil, fmt.Errorf("incomlete SMTP configuration missing %sUSER or SMTP_USER for %s", prefix, e.ID)
+	}
+	if len(pass) < 1 {
+		return nil, fmt.Errorf("incomlete SMTP configuration missing %sPASS or SMTP_PASS for %s", prefix, e.ID)
 	}
 
-	{
-		port, err := strconv.Atoi(port)
-		if err != nil {
-			return nil, err
+	port, err := strconv.Atoi(stringPort)
+	if err != nil {
+		if len(emailPort) < 1 {
+			prefix = "SMTP_"
 		}
-
-		server := mail.NewSMTPClient()
-		server.Host = host
-		server.Port = port
-		server.Username = user
-		server.Password = pass
-		server.Encryption = mail.EncryptionTLS
-		server.Authentication = mail.AuthLogin
-		server.KeepAlive = false
-		server.ConnectTimeout = 10 * time.Second
-		server.SendTimeout = 10 * time.Minute
-
-		return server, nil
+		return nil, fmt.Errorf("could not parse %sPORT: %w", prefix, err)
 	}
+
+	server := mail.NewSMTPClient()
+	server.Host = host
+	server.Port = port
+	server.Username = user
+	server.Password = pass
+	server.Encryption = mail.EncryptionTLS
+	server.Authentication = mail.AuthLogin
+	server.KeepAlive = false
+	server.ConnectTimeout = 10 * time.Second
+	server.SendTimeout = 10 * time.Minute
+
+	return server, nil
 }
 
 func (e *Email) generate(s *Submission) (string, error) {
@@ -104,12 +115,12 @@ func (e *Email) generate(s *Submission) (string, error) {
 func (e *Email) Email(submission *Submission) (*mail.Email, error) {
 	message, err := e.generate(submission)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to generate message: %w", err)
 	}
 
 	token := make([]byte, 32)
 	if _, err := rand.Read(token); err != nil {
-		return nil, errors.New("failed to generate message-id")
+		return nil, fmt.Errorf("failed to generate message-id: %w", err)
 	}
 
 	email := mail.NewMSG()

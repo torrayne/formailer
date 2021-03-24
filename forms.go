@@ -83,15 +83,19 @@ func (c Config) Parse(contentType string, body string) (*Submission, error) {
 	default:
 		err = errors.New("invalid content type")
 	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse body: %w", err)
+	}
 
 	form, ok := submission.Values["_form_name"].(string)
-	if !ok {
-		return nil, fmt.Errorf("field _form_name not of type string or not set")
+	if !ok || len(form) < 1 {
+		return nil, fmt.Errorf("missing _form_name field in submitted form data: %w", err)
 	}
+
 	form = strings.ToLower(form)
 	submission.Form, ok = c[form]
 	if !ok {
-		return nil, fmt.Errorf("missing emails for form %s", form)
+		return nil, fmt.Errorf("missing form config for form %s", form)
 	}
 
 	submission.removeIgnored()
