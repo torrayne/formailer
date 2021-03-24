@@ -142,6 +142,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// manipulate data, check honey pot fields
+	// handlers.VerifyRecaptcha()
 
 	// Send emails
 	err = submission.Send()
