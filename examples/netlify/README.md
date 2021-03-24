@@ -11,14 +11,14 @@ import (
 )
 
 func main() {
-	contact := formailer.Form{Name: "Contact"}
+	contact := formailer.New("Contact")
 	contact.AddEmail(formailer.Email{
 		ID:      "contact",
 		To:      "info@domain.com",
 		From:    `"Company" <noreply@domain.com>`,
 		Subject: "New Contact Submission",
 	})
-	formailer.Add(contact)
+
 	lambda.Start(handlers.Netlify(formailer.DefaultConfig))
 }
 ```

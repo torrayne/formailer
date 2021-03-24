@@ -22,10 +22,8 @@ import (
 )
 
 func main() {
-	contact := formailer.Form{
-		Name: "Contact",
-		Redirect: "/thank-you/",
-	}
+	contact := formailer.New("Contact")
+	contact.Redirect = "/thank-you/"
 	contact.AddEmail(formailer.Email{
 		ID:      "contact",
 		To:      "info@domain.com",
@@ -35,10 +33,8 @@ func main() {
 		Subject: "New Contact Submission",
 	})
 	
-	quote := formailer.Form{
-		Name: "Quote",
-		Redirect: "/thank-you/",
-	}
+	quote := formailer.New("Quote")
+	quote.Redirect = "/thank-you/"
 	quote.AddEmail(formailer.Email{
 		ID:      "quote",
 		To:      "sales@domain.com",
@@ -47,15 +43,11 @@ func main() {
 		Subject: "New Quote Request",
 	})
 
-	formailer.Add(contact, quote)
+	// Vercel
+	handlers.Vercel(formailer.DefaultConfig, w, r)
+	// Netlify
+	lambda.Start(handlers.Netlify(formailer.DefaultConfig))
 }
-```
-And run your handler.
-```go
-// Vercel
-handlers.Vercel(formailer.DefaultConfig, w, r)
-// Netlify
-lambda.Start(handlers.Netlify(formailer.DefaultConfig))
 ```
 If you want to use your own handler that's not a problem either. [View an example handler](#user-content-custom-handlers).
 
