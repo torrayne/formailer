@@ -7,11 +7,12 @@
 
 ![Screenshot](img.png)
 
-If you need your contact form to send you an email but don't need to store form submissions, then Formailer is the serverless library for you!
+If you need your contact form to send you an email from your Jamstack site, Formailer is the serverless library for you! Out of the box Formailer supports redirects, reCAPTCHA, custom email templates, and custom handlers.
 
 ## Quickstart
+[View Documenation](https://pkg.go.dev/github.com/djatwood/formailer)
 
-No matter what hosting platform you are using. The initial setup is the same. Add your emails settings. You can add multiple emails per form.
+Formailer tries to require as little boilerplate as possible. Create a form, add some emails, and run a handler.
 ```go
 import (
 	"github.com/djatwood/formailer"
@@ -23,24 +24,10 @@ import (
 
 func main() {
 	contact := formailer.New("Contact")
-	contact.Redirect = "/thank-you/"
 	contact.AddEmail(formailer.Email{
-		ID:      "contact",
 		To:      "info@domain.com",
-		Cc:      []string{"support@domain.com"},
-		Bcc:      []string{"support@domain.com"},
 		From:    `"Company" <noreply@domain.com>`,
 		Subject: "New Contact Submission",
-	})
-	
-	quote := formailer.New("Quote")
-	quote.Redirect = "/thank-you/"
-	quote.AddEmail(formailer.Email{
-		ID:      "quote",
-		To:      "sales@domain.com",
-		From:    `"Company" <noreply@domain.com>`,
-		ReplyTo: `"Company" <support@domain.com>`,
-		Subject: "New Quote Request",
 	})
 
 	// Vercel
@@ -51,7 +38,7 @@ func main() {
 ```
 If you want to use your own handler that's not a problem either. [View an example handler](#user-content-custom-handlers).
 
-Last you update your form. So that we can use the correct form config you need to add the form name as a hidden input with the name `_form_name`.
+Then you update your form. So that we can use the correct form config you need to add the form id as a hidden input with the name `_form_name`. Note the form id is case-insensitive.
 
 Formailer supports submitting forms as `application/x-www-form-urlencoded`, `multipart/form-data`, or `application/json`.
 
@@ -71,7 +58,7 @@ The built-in handlers come with built in Google reCaptcha verification if you ad
 
 ## Customization
 
-You can customize Formailer to suit your needs. You can add as many forms as you'd like. As long as they have unique names. Each form can have it's own email template and SMTP settings. But if you want to set defaults for everything you can.
+You can customize Formailer to suit your needs. You can add as many forms as you'd like. As long as they have unique ids. Each form can have it's own email template and SMTP settings. But if you want to set defaults for everything you can.
 ### SMTP
 
 All of your SMTP variables must be saved in the environment. You can add as many configs as you have emails. And you can save a default config to fallback on. Note that if you have default config you don't need to specify every option again. Any missing options will fallback to the default.
@@ -92,16 +79,21 @@ SMTP_EMAIL-ID_PASS=youcantguessthispassword
 ```
 
 ### Templates
-Here is the default template. It hides all inputs with names starting with `_`.
+Here is the default template.
 
 ![Screenshot](img.png)
 
-You can override this template on any form by using the `Template` field.
+You can override this template on any form by using the `Template` field. You can use Go 1.16 >= embed package to separate your template files from your function file.
 ```go
 forms.Add("form", formailer.Email{
 	...
 	Template: defaultTemplate,
 }
+
+//go:embed mytemplate.html
+var defaultTemplate string
+
+// OR
 
 defaultTemplate := `
 <html>
@@ -164,10 +156,11 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 ## Why did I buid Formailer?
 
-I love JAMStack. But it can get expensive pretty quickly. Netlify only allows for 100 form submissions a month but it does allows for 125k function calls per month. So I did the next logical thing.
+I love Jamstack but SaaS can get expensive pretty quickly. Netlify has a built in form system that costs $19/month after the first 100 submissions. It also has a serverless function system that allows for 125 invocations a month. So I did the obvious thing, create a library that handles forms for Jamstack sites.
 
-Netlify barely supports Go, you can't even use the Netlify CLI to test Go functions. Every change had to be commited and tested directly on Netlify. The bad part is I had minimal experience working with multipart forms before this project. And [Hoppscotch](https://hoppscotch.io) doesn't implement multipart forms in a traditional way which led to a bunch of builds that I thought didn't work but actually did.
+### The challenge
+Netlify barely supports Go, you can't even use the Netlify CLI to test Go functions. Every change had to be commited and tested directly on Netlify. Even worse is that I had minimal experience working with multipart forms before this project. And my testing software [Hoppscotch](https://hoppscotch.io) doesn't implement multipart forms in a traditional way which led to a bunch of builds that I thought didn't work but actually did.
 
-There's also an annoying bug with environment variables where [functions can't read variabes defined in the `netlify.toml`](https://github.com/netlify/netlify-lambda/issues/59). So you'll just have to add them all in the UI.
+There's also an annoying bug with environment variables where [functions can't read variabes defined in the `netlify.toml`](https://github.com/netlify/netlify-lambda/issues/59). So you'll just have to add them all in the Netlify UI.
 
-Later I switched to Vercel which was a huge breath of fresh air. Because you can test Go functions locally. Even though they say Go support is still in alpha.
+Later I switched to Vercel for testing which was a huge breath of fresh air. You can test Go functions locally even though Go support is still in alpha.
