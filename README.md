@@ -85,7 +85,7 @@ Here is the default template.
 
 You can override this template on any form by using the `Template` field. You can use Go 1.16 >= embed package to separate your template files from your function file.
 ```go
-forms.Add("form", formailer.Email{
+contact.AddEmail(formailer.Email{
 	...
 	Template: defaultTemplate,
 }
