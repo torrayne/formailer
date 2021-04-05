@@ -157,7 +157,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 ## Why did I buid Formailer?
 
-I love Jamstack but SaaS can get expensive pretty quickly. Netlify has a built in form system that costs $19/month after the first 100 submissions. It also has a serverless function system that allows for 125 invocations a month. So I did the obvious thing, create a library that handles forms for Jamstack sites.
+I love Jamstack but SaaS can get expensive pretty quickly. Netlify has a built in form system that costs $19/month after the first 100 submissions. It also has a serverless function system that allows for 125k invocations a month. So I did the obvious thing, create a library that handles forms for Jamstack sites.
 
 ### The challenge
 Netlify barely supports Go, you can't even use the Netlify CLI to test Go functions. Every change had to be commited and tested directly on Netlify. Even worse is that I had minimal experience working with multipart forms before this project. And my testing software [Hoppscotch](https://hoppscotch.io) doesn't implement multipart forms in a traditional way which led to a bunch of builds that I thought didn't work but actually did.
