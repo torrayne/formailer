@@ -3,91 +3,50 @@
 <head>
     <style>
         body {
+            color: #404040;
+            font-size: 1.1rem;
+            font-weight: 400;
             font-family: sans-serif;
         }
 
         #wrapper {
-            max-width: 800px;
-            padding: 30px 20px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            margin: 20px 0 10px;
-        }
-
-        .content {
-            width: 100%;
-            margin: 0;
-
+            max-width: 1200px;
+            padding: 20px;
         }
 
         h1 {
-            font-size: 1.8rem;
-            color: #212121;
-            font-weight: bold;
-            margin: 0 0 10px;
-        }
-
-        table {
-            border-collapse: collapse;
-        }
-
-        th,
-        td {
-            vertical-align: top;
-            padding: 10px 10px;
-            border-top: 1px solid #ddd;
-            text-align: left;
-            color: #404040;
-            font-size: 1.1rem;
-            font-weight: 400;
-        }
-
-        th {
-            font-weight: bold;
+            font-size: 2rem;
+            margin-top: 0;
+            margin-bottom: 1.5rem;
         }
 
         p {
-            margin-top: 0;
+            margin: 0;
         }
 
-        p:last-of-type {
-            margin-bottom: 0;
-        }
-
-        .attribute {
-            padding: 0 20px;
-            text-decoration: none;
-            color: #404040;
+        strong {
+            display: block;
+            padding-top: 1rem;
+            border-top: 1px solid #ddd;
+            margin-top: 1rem;
+            margin-bottom: 6px;
         }
     </style>
 </head>
 
 <body>
     <div id="wrapper">
-        <div class="content">
-            <h1>New {{or .Form.Name .Form.ID}} submission</h1>
-            <table>
-                <tbody>
-                    {{- range $key := .Order -}}
-                    <tr>
-                        <th>{{ $key }}</th>
-                        <td>
-                            {{- $value := index $.Values $key -}}
-                            {{- if (isSlice $value) -}}
-                            {{- range $i, $v := $value -}}
-                            <p>{{$v}}</p>
-                            {{- end -}}
-                            {{- else -}}
-                            <p>{{$value}}</p>
-                            {{- end -}}
-                        </td>
-                    </tr>
-                    {{- end -}}
-                </tbody>
-            </table>
-        </div>
+        <h1>New {{or .Form.Name .Form.ID}} submission</h1>
+        {{- range $key := .Order -}}
+        <p><strong>{{ $key }}</strong></p>
+        {{- $value := index $.Values $key -}}
+        {{- if (isSlice $value) }}{{ range $i, $v := $value -}}
+        <p>{{ $v }}</p>
+        {{- end }}{{ else -}}
+        <p>{{ $value }}</p>
+        {{- end -}}
+        {{- end -}}
     </div>
-    <p class="content"><a class="attribute" href="https://atwood.io">Powered by Formailer © Atwood.io</a></p>
 </body>
 
 </html>
