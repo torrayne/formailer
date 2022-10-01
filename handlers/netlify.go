@@ -46,7 +46,7 @@ func Netlify(c formailer.Config) func(events.APIGatewayProxyRequest) (*events.AP
 			return netlifyResponse(http.StatusMethodNotAllowed, nil), nil
 		}
 
-		submission, err := formailer.Parse(request.Headers["content-type"], request.Body)
+		submission, err := c.Parse(request.Headers["content-type"], request.Body)
 		if err != nil {
 			return netlifyResponse(http.StatusBadRequest, err), nil
 		}
