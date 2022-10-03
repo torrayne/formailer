@@ -61,16 +61,16 @@ func (e *Email) server() (*mail.SMTPServer, error) {
 	stringPort := or(emailPort, defaultPort)
 
 	if len(host) < 1 {
-		return nil, fmt.Errorf("incomlete SMTP configuration missing %sHOST or SMTP_HOST for %s", prefix, e.ID)
+		return nil, fmt.Errorf("incomplete SMTP configuration missing %sHOST or SMTP_HOST for %s", prefix, e.ID)
 	}
 	if len(stringPort) < 1 {
-		return nil, fmt.Errorf("incomlete SMTP configuration missing %sPORT or SMTP_PORT for %s", prefix, e.ID)
+		return nil, fmt.Errorf("incomplete SMTP configuration missing %sPORT or SMTP_PORT for %s", prefix, e.ID)
 	}
 	if len(user) < 1 {
-		return nil, fmt.Errorf("incomlete SMTP configuration missing %sUSER or SMTP_USER for %s", prefix, e.ID)
+		return nil, fmt.Errorf("incomplete SMTP configuration missing %sUSER or SMTP_USER for %s", prefix, e.ID)
 	}
 	if len(pass) < 1 {
-		return nil, fmt.Errorf("incomlete SMTP configuration missing %sPASS or SMTP_PASS for %s", prefix, e.ID)
+		return nil, fmt.Errorf("incomplete SMTP configuration missing %sPASS or SMTP_PASS for %s", prefix, e.ID)
 	}
 
 	port, err := strconv.Atoi(stringPort)
