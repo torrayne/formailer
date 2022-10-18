@@ -44,7 +44,7 @@ func Vercel(c formailer.Config, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	submission, err := formailer.Parse(r.Header.Get("Content-Type"), body.String())
+	submission, err := c.Parse(r.Header.Get("Content-Type"), body.String())
 	if err != nil {
 		vercelResponse(w, http.StatusBadRequest, err)
 		return
