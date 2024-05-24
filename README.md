@@ -1,19 +1,19 @@
 # Formailer
 
-![Go](https://github.com/djatwood/formailer/workflows/Go/badge.svg)
+![Go](https://github.com/torrayne/formailer/workflows/Go/badge.svg)
 
 ![Screenshot](img.png)
 
 If you need your contact form to send you an email from your Jamstack site, Formailer is the serverless library for you! Out of the box Formailer supports redirects, reCAPTCHA, custom email templates, and custom handlers.
 
 ## Quickstart
-[View Documenation](https://pkg.go.dev/github.com/djatwood/formailer)
+[View Documenation](https://pkg.go.dev/github.com/torrayne/formailer)
 
 Formailer tries to require as little boilerplate as possible. Create a form, add some emails, and run a handler.
 ```go
 import (
-	"github.com/djatwood/formailer"
-	"github.com/djatwood/formailer/handlers"
+	"github.com/torrayne/formailer"
+	"github.com/torrayne/formailer/handlers"
 	
 	// For Netlify
 	"github.com/aws/aws-lambda-go/lambda"

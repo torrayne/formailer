@@ -6,8 +6,8 @@ import (
 	"net/http"
 
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/djatwood/formailer"
-	"github.com/djatwood/formailer/logger"
+	"github.com/torrayne/formailer"
+	"github.com/torrayne/formailer/logger"
 )
 
 func netlifyResponse(code int, err error, headers ...[2]string) *events.APIGatewayProxyResponse {

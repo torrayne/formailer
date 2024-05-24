@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/djatwood/formailer"
-	"github.com/djatwood/formailer/logger"
 	"github.com/google/martian/log"
+	"github.com/torrayne/formailer"
+	"github.com/torrayne/formailer/logger"
 )
 
 func vercelResponse(w http.ResponseWriter, code int, err error) {

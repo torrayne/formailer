@@ -1,9 +1,9 @@
 package gcf
 
 import (
+	"github.com/torrayne/formailer"
+	"github.com/torrayne/formailer/handlers"
 	"net/http"
-	"github.com/djatwood/formailer"
-	"github.com/djatwood/formailer/handlers"
 
 	"github.com/GoogleCloudPlatform/functions-framework-go/functions"
 )
