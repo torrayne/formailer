@@ -47,7 +47,7 @@ func TestGenerate(t *testing.T) {
 		Form:  testForm,
 		Order: []string{"Name", "Message", "_form_name"},
 		Values: map[string]interface{}{
-			"Name":       []string{"Daniel", "Atwood"},
+			"Name":       []string{"Rayne", "Atwood"},
 			"Message":    "Hello, World!",
 			"_form_name": "test",
 		},

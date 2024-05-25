@@ -13,7 +13,7 @@ import (
 
 var testSubmissionData = url.Values{
 	"_form_name": {"contact"},
-	"name":       {"Daniel", "Atwood"},
+	"name":       {"Rayne", "Atwood"},
 	"message":    {"This is my message"},
 	"urlencoded": {`message=`},
 	"multipart":  {`name="message"`},
